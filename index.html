@@ -1,0 +1,2161 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spielauswertung">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Spielauswertung</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--fg:#e8eaee;--card:#1e232b;--line:#3a424e;--calc:#223a5c;--pos:#5ccf80;--neg:#ff8a80;--acc:#6ea0ff;--accfg:#0c1220}}
+:root[data-theme="dark"]{--bg:#14171c;--fg:#e8eaee;--card:#1e232b;--line:#3a424e;--calc:#223a5c;--pos:#5ccf80;--neg:#ff8a80;--acc:#6ea0ff;--accfg:#0c1220}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px Arial,Helvetica,sans-serif;-webkit-user-select:none;user-select:none}
+#app{padding:10px;max-width:100%}
+.hd{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+label{display:flex;flex-direction:column;font-size:12px;font-weight:bold;gap:2px}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;-webkit-user-select:text;user-select:text;min-width:0}
+input:disabled,textarea:disabled{opacity:.75}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+button{font:inherit;font-weight:bold;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;padding:10px 14px;min-height:44px}
+button.on{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+button.warn{background:var(--neg);border-color:var(--neg);color:#fff}
+button.pri{background:var(--pos);border-color:var(--pos);color:#fff}
+.sp{flex:1}
+.hint{font-size:12px;opacity:.75;margin:4px 0 8px}
+.ban{background:var(--calc);border-radius:8px;padding:8px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-weight:bold}
+.ban span{flex:1;min-width:200px}
+.wrap{border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+col.nr{width:40px}col.nm{width:12%}
+th,td{border:1px solid var(--line);text-align:center;padding:0;overflow:hidden}
+th{font-size:clamp(9px,1vw,12px);padding:5px 2px;background:var(--bg);vertical-align:bottom;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word;position:sticky;top:0;z-index:2}
+th.p{color:var(--pos)}th.n{color:var(--neg)}th.calc{background:var(--calc)}
+td.c{padding:3px}
+.cc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:3px}
+.cc button{width:100%;min-width:0;min-height:0;padding:0;line-height:1;border-radius:7px}
+.cc button.pl{grid-column:1/3;height:40px;font-size:24px;background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+.cc button.mi{height:30px;font-size:20px;color:var(--neg)}
+.cc b{display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.6vw,20px)}
+.cc button:active{opacity:.6}
+td.ro{font-size:clamp(14px,1.6vw,18px);font-weight:bold;height:40px}
+td.calc{background:var(--calc);font-weight:bold;font-size:clamp(12px,1.3vw,16px)}
+td.nm{text-align:left;padding:0 6px;font-size:clamp(12px,1.2vw,15px)}
+td.nr{font-size:13px;font-weight:bold}
+tr.tot td{background:var(--bg);font-weight:bold;height:40px}
+tr.tot td.calc{background:var(--calc)}
+td.empty{padding:20px;text-align:center;opacity:.8}
+.st th{font-size:clamp(8px,.95vw,12px)}
+.st td{height:36px;font-size:clamp(11px,1.15vw,14px)}
+.st td.nm{font-weight:bold}
+.add{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.add input{flex:1;min-width:160px}.add input.n{flex:0 0 80px;min-width:80px}
+.kt td{padding:4px;height:52px}
+.kt td input,.kt td select{width:100%}
+.kt input[type=checkbox]{width:28px;height:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card .ti{flex:1;min-width:240px}
+.card .ti b{display:block;font-size:16px}
+.card .ti small{opacity:.75}
+h3{margin:14px 0 6px;font-size:16px}
+textarea{width:100%;min-height:300px}
+.score{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.score .sc{font-size:clamp(18px,2.2vw,26px);font-weight:bold;white-space:nowrap}
+.score .sc b{font-size:1.25em;margin:0 6px}
+.score small{opacity:.75;white-space:nowrap}
+.seg{display:inline-flex}.seg button{border-radius:0;min-width:64px}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.seg button+button{margin-left:-1px}
+button:disabled{opacity:.4}
+.lbl{font-size:12px;font-weight:bold;opacity:.75}
+.gkq{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.gkq button small{font-weight:normal;opacity:.75}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:8px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;font-weight:bold;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+
+.score{position:sticky;top:0;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.last{font-size:14px;font-weight:bold;opacity:.85}
+h3{margin:14px 0 8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:left;min-height:100px;display:flex;flex-direction:column;gap:3px;font:inherit;color:var(--fg);font-weight:normal}
+.tile:active{background:var(--calc)}
+.tile .tn{font-size:clamp(16px,1.6vw,20px);font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .tn span{display:inline-block;min-width:30px;color:var(--acc);margin-right:6px}
+.tile .ts{font-size:13px;opacity:.8}
+.tile .wn{font-size:13px;font-weight:bold;color:var(--neg)}
+.tile.gk{border:2px solid var(--acc);padding:0;gap:0}
+.tile .tg{background:transparent;border:0;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px 6px;min-height:0;font-weight:normal;color:var(--fg)}
+.tiles.gks{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.tile .qk{display:flex;gap:6px;padding:0 8px 8px}.tile .qk button{flex:1;min-width:0;min-height:52px;padding:6px 4px;white-space:nowrap;font-size:15px}
+.go.pos{background:var(--pos);border-color:var(--pos);color:#fff}
+.go.neg{background:var(--neg);border-color:var(--neg);color:#fff}
+.go.neu{background:var(--card);color:var(--fg)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;z-index:30;padding:16px 10px;overflow:auto}
+.ov[hidden]{display:none}
+.sheet{background:var(--bg);border-radius:14px;width:100%;max-width:1000px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:4px}.sh h2{margin:0;font-size:24px;flex:1}.sh h2 span{color:var(--acc)}
+.x{min-width:52px;font-size:20px}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.ab{display:flex}
+.ab .go{flex:1;min-width:0;min-height:64px;border-radius:10px 0 0 10px;font-size:17px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ab .go span{min-width:0;overflow-wrap:break-word;hyphens:manual;-webkit-hyphens:manual}
+.ab .go b{flex:0 0 auto;background:rgba(0,0,0,.18);border-radius:999px;padding:2px 10px;min-width:36px;text-align:center}
+.ab .go.neu b{background:var(--bg)}
+.ab .dn{flex:0 0 48px;width:48px;border-radius:0 10px 10px 0;margin-left:-1px;font-size:22px;color:var(--neg);padding:0}
+.mn{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}.mn button{min-height:60px;font-size:17px}
+.sheet .hd{margin-top:8px}
+.mob{display:none}
+.navm{display:contents}
+@media (max-width:600px){
+  .dsk{display:none}.mob{display:inline}
+  body{font-size:14px}
+  #app{padding:8px 8px 84px}
+  .hint{display:none}
+  .navm{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;gap:4px;background:var(--card);border-top:1px solid var(--line);
+        padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+  .navm button{flex:1;min-height:52px;padding:6px 4px;font-size:15px}
+  #bar>button{padding:8px 12px}
+  .score{padding:6px 8px;gap:6px}
+  .score .sc{font-size:18px;flex-basis:100%}
+  .score .seg button{min-width:52px;padding:8px 10px}
+  .score .gkq{padding-top:6px}
+  .score .last{font-size:12px}
+  .og-row{display:none}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tiles.gks{grid-template-columns:1fr}
+  .tile{min-height:84px;padding:8px 10px}
+  .tile .tn{font-size:17px}.tile .ts{font-size:12px}
+  .ov{padding:0;align-items:stretch}
+  .sheet{border-radius:0;min-height:100%;padding:10px}
+  .sh h2{font-size:20px}
+  .ag{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .ab .go{min-height:56px;font-size:14px;padding:6px 8px}
+  .ab .go b{min-width:28px;padding:2px 6px}
+  .ab .dn{flex:0 0 38px;width:38px;font-size:20px}
+  .mn{grid-template-columns:1fr}
+  .seg button{min-width:0}
+  .kt col.k1{width:40px!important}.kt col.k2{width:52px!important}.kt col.k4{width:92px!important}.kt col.k5{width:48px!important}
+  .kt td{padding:3px}.kt td input,.kt td select{padding:6px 4px}.kt td button{padding:6px 4px;width:100%}
+  #toast{bottom:90px}
+}
+.qrbox{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:10px;margin:8px auto;max-width:520px}
+.qr{width:100%;max-width:min(480px,62vh);height:auto;display:block}
+.qrv{width:100%;max-height:58vh;border-radius:8px;background:#000;display:block}
+.ctr{text-align:center}
+#qtx{min-height:70px;width:100%}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+.rolebtn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;min-height:110px;padding:14px;border-radius:12px;font-weight:normal}
+.rolebtn b{font-size:20px}.rolebtn span{font-size:14px;opacity:.85}
+.rolebtn.on span{opacity:1}
+.ok{color:var(--pos);font-weight:bold}
+.ftx{min-height:120px;font-size:16px;line-height:1.5;width:100%}
+.rtx{min-height:220px;font-size:16px;line-height:1.5}
+.ban.warnb{background:#fde7c7;color:#5a3a00}
+.cards{display:flex;flex-direction:column;gap:6px}
+details.pc{background:var(--card);border:1px solid var(--line);border-radius:10px}
+details.pc.tot{background:var(--calc)}
+details.pc summary{list-style:none;padding:10px 12px;display:flex;flex-direction:column;gap:3px;cursor:pointer}
+details.pc summary::-webkit-details-marker{display:none}
+.pc .pn{font-weight:bold;font-size:16px}.pc .pn span{color:var(--acc);display:inline-block;min-width:28px}
+.pc .pv{font-size:13px;opacity:.85}
+.pc .pv::after{content:' ▸';opacity:.6}
+details.pc[open] .pv::after{content:' ▾'}
+.pd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:0 12px 10px;font-size:13px}
+.pd div{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:3px 0}
+.pd div b{margin-left:8px}
+</style></head><body>
+<div id="app">
+<div class="bar" id="bar"></div>
+<div class="hint" id="hint"></div>
+<div id="tbl"></div>
+<input type="file" id="imp" multiple style="display:none">
+<div class="ov" id="ov" hidden><div class="sheet" id="sheet"></div></div>
+</div>
+<div id="toast"></div>
+<script>
+// ---------- Grundlagen ----------
+const SH='­';
+const q=(a,b)=>b?Math.round(a/b*100)+'%':'–';
+const v=(o,k)=>(o&&o[k])||0;
+const avg=(x,n)=>n?(x/n).toFixed(1).replace('.',','):'–';
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const angr=o=>v(o,'as')+v(o,'h7')+v(o,'e1')+v(o,'h2')-v(o,'tf')-v(o,'pf');
+const abw=o=>v(o,'st')+v(o,'pe')+v(o,'bl')-v(o,'z2')-v(o,'v7')-v(o,'v1');
+const SEC={
+a:{t:'Angriff',cols:[
+{k:'w',l:'Würfe'},{k:'t',l:'Tore',also:'w'},{l:`Wurf${SH}quote gesamt`,f:o=>q(v(o,'t'),v(o,'w'))},
+{k:'w7',l:'7m Würfe'},{k:'t7',l:'7m Tore',also:'w7'},{l:`7m Wurf${SH}quote`,f:o=>q(v(o,'t7'),v(o,'w7'))},
+{k:'as',l:'Assists (+)',s:'p'},{k:'tf',l:`Tech${SH}nische Fehler (−)`,s:'n'},{k:'pf',l:`Pass- & Fang${SH}fehler (−)`,s:'n'},
+{k:'h7',l:`7m heraus${SH}geholt (+)`,s:'p'},{k:'e1',l:`1:1 Aktion gewon${SH}nen (+)`,s:'p'},{k:'h2',l:`2 Min heraus${SH}geholt (+)`,s:'p'},
+{l:`Angriffs${SH}leistung (+/−)`,f:angr}]},
+d:{t:'Abwehr',cols:[
+{k:'st',l:`Steals, abge${SH}fangene Bälle (+)`,s:'p'},{k:'pe',l:`Tech${SH}nische Fehler provo${SH}ziert (+)`,s:'p'},{k:'bl',l:'Geblockte Bälle (+)',s:'p'},
+{k:'z2',l:'2 Min erhalten (−)',s:'n'},{k:'v7',l:'7m verursacht (−)',s:'n'},{k:'v1',l:'1:1 Aktion verloren (−)',s:'n'},
+{l:`Abwehr${SH}leistung (+/−)`,f:abw}]},
+g:{t:'Torhüter',cols:[
+{k:'h',l:'Gehaltene Würfe'},{k:'g',l:`Gegen${SH}treffer`},{l:'Abwehr-Quote',f:o=>q(v(o,'h'),v(o,'h')+v(o,'g'))},
+{k:'s7',l:'7m'},{k:'h7',l:'7m gehalten',also:'s7'},{l:'7m-Quote',f:o=>q(v(o,'h7'),v(o,'s7'))},
+{k:'as',l:'Assist'},{k:'fp',l:'Fehlpässe'}]}};
+const LK=s=>s==='g'?'gk':'fp';
+
+// ---------- Zustand ----------
+const newGame=(fp,gk)=>({id:uid(),h:{},notes:'',fp:[...(fp||[])],gk:[...(gk||[])],a:{},d:{},g:{},x:{},h2:{},half:1});
+const fresh=()=>({kader:[],cur:newGame(),archiv:[],tab:'kader',view:null,season:'alle',hf:'all',undo:[],autoB:null});
+let S=fresh();
+(function load(){
+  let r=null;try{r=localStorage.getItem('sa2')}catch(e){}
+  if(r){try{S=Object.assign(fresh(),JSON.parse(r))}catch(e){}return}
+  let o=null;try{o=JSON.parse(localStorage.getItem('sa1')||'null')}catch(e){}
+  if(!o)return;                                   // Übernahme aus Version 1
+  const has=x=>x&&Object.values(x).some(n=>n>0);
+  (o.names||[]).forEach((n,i)=>{const a=(o.a||[])[i],d=(o.d||[])[i];
+    if(!n&&!has(a)&&!has(d))return;const id=uid();
+    S.kader.push({id,name:n||'Spieler '+(i+1),nr:'',r:'f'});S.cur.fp.push(id);S.cur.a[id]=a||{};S.cur.d[id]=d||{}});
+  (o.gn||[]).forEach((n,i)=>{const g=(o.g||[])[i];if(!n&&!has(g))return;const id=uid();
+    S.kader.push({id,name:n||'Torhüter '+(i+1),nr:'',r:'g'});S.cur.gk.push(id);S.cur.g[id]=g||{}});
+  S.cur.h=o.h||{};S.cur.notes=o.notes||'';if(S.kader.length)S.tab='a';save();
+})();
+function save(){try{localStorage.setItem('sa2',JSON.stringify(S))}catch(e){}}
+const G=()=>(S.view&&S.archiv.find(x=>x.id===S.view))||S.cur;
+const ro=()=>!!(S.view&&S.archiv.find(x=>x.id===S.view));
+const kp=id=>S.kader.find(p=>p.id===id);
+const pn=(g,id)=>{const p=kp(id);return p?p.name:(g.players&&g.players[id]?g.players[id].name:'?')};
+const pnr=(g,id)=>{const p=kp(id);return p?p.nr:(g.players&&g.players[id]?g.players[id].nr:'')};
+const nrSort=(a,b)=>{const x=parseInt(a.nr),y=parseInt(b.nr);
+  if(isNaN(x)!==isNaN(y))return isNaN(x)?1:-1;if(!isNaN(x)&&x!==y)return x-y;return String(a.name).localeCompare(String(b.name),'de')};
+const lineup=(g,key)=>g[key].map(id=>({id,name:pn(g,id),nr:pnr(g,id)})).sort(nrSort);
+const hasData=g=>['a','d','g','x'].some(s=>Object.values(g[s]||{}).some(o=>Object.values(o||{}).some(n=>n>0)))
+  ||Object.values(g.h||{}).some(x=>x)||!!g.notes;
+// Halbzeiten: g[sec] = gesamt, g.h2[sec] = Anteil 2. Halbzeit, 1. HZ = gesamt − 2. HZ
+const pobj=(g,sec,pid,hf)=>{const t=((g[sec]||{})[pid])||{};if(!hf||hf==='all')return t;
+  const two=(((g.h2||{})[sec]||{})[pid])||{},o={};for(const k in t)o[k]=hf==='2'?(two[k]||0):Math.max(0,(t[k]||0)-(two[k]||0));return o};
+function score(g,hf){let own=0,opp=0;
+  g.fp.forEach(id=>{const o=pobj(g,'a',id,hf);own+=v(o,'t')+v(o,'t7')});
+  g.gk.forEach(id=>{const o=pobj(g,'g',id,hf);opp+=v(o,'g')+Math.max(0,v(o,'s7')-v(o,'h7'))});
+  opp+=v(pobj(g,'x','og',hf),'n');return[own,opp]}
+const hasH2=g=>(g.half||1)===2||Object.values(g.h2||{}).some(S_=>Object.values(S_||{}).some(o=>Object.values(o||{}).some(n=>n>0)));
+const gDate=g=>g.h&&g.h.datum?g.h.datum:new Date(g.savedAt||Date.now()).toISOString().slice(0,10);
+const fD=iso=>iso?iso.split('-').reverse().join('.'):'';
+const gTitle=g=>`${g.h.heim||'?'} – ${g.h.gast||'?'}`;
+const seasonOf=g=>{const d=gDate(g),y=+d.slice(0,4),m=+d.slice(5,7);return m>=7?`${y}/${String(y+1).slice(2)}`:`${y-1}/${String(y).slice(2)}`};
+
+let armed=null,timer=0;
+function arm(key,fn){if(armed===key){clearTimeout(timer);armed=null;fn();return}
+  armed=key;clearTimeout(timer);timer=setTimeout(()=>{armed=null;render()},3000);render()}
+const ab=(key,txt,conf,act,extra)=>`<button data-act="${act}" ${extra||''} class="${armed===key?'warn':''}">${armed===key?conf:txt}</button>`;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600)}
+
+
+/* QR-Code-Erzeugung: QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT-Lizenz (über qrcode-terminal 0.12.0, Apache-2.0). Gebündelt für die Offline-Nutzung. */
+var QRLib=(function(){var M={};function require(p){return M[p.replace('./','')];}
+M['QRMode']=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+return module.exports;})();
+M['QRErrorCorrectLevel']=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+return module.exports;})();
+M['QRMaskPattern']=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+return module.exports;})();
+M['QRMath']=(function(){var module={exports:{}};var exports=module.exports;
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+return module.exports;})();
+M['QRPolynomial']=(function(){var module={exports:{}};var exports=module.exports;
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+return module.exports;})();
+M['QR8bitByte']=(function(){var module={exports:{}};var exports=module.exports;
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+return module.exports;})();
+M['QRBitBuffer']=(function(){var module={exports:{}};var exports=module.exports;
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+return module.exports;})();
+M['QRRSBlock']=(function(){var module={exports:{}};var exports=module.exports;
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+return module.exports;})();
+M['QRUtil']=(function(){var module={exports:{}};var exports=module.exports;
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+return module.exports;})();
+M['index']=(function(){var module={exports:{}};var exports=module.exports;
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+return module.exports;})();
+return {QRCode:M['index'],L:M['QRErrorCorrectLevel']};})();
+// ---------- Kader per QR-Code teilen / empfangen ----------
+// Inhalt: "SPAK1:" + JSON {k:[[id,nr,name,rolle],…]} – nur ASCII (Umlaute als \uXXXX), damit jeder QR-Leser es gleich liest
+function kaderCode(){const k=[...S.kader].sort(nrSort).map(p=>[p.id,p.nr||'',p.name,p.r]);
+  return 'SPAK1:'+JSON.stringify({k}).replace(/[\u007f-￿]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'))}
+function qrSvg(txt){const lvl=txt.length>650?QRLib.L.L:QRLib.L.M,q=new QRLib.QRCode(-1,lvl);q.addData(txt);q.make();
+  const n=q.getModuleCount(),m=4,N=n+2*m;let d='';
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+m} ${r+m}h1v1h-1z`;
+  return `<svg class="qr" viewBox="0 0 ${N} ${N}" shape-rendering="crispEdges" role="img" aria-label="QR-Code Kader"><rect width="${N}" height="${N}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`}
+function parseKader(raw){let s=String(raw||'').trim();
+  const tryP=x=>{const i=x.indexOf('SPAK1:');if(i<0)return null;try{const o=JSON.parse(x.slice(i+6));return Array.isArray(o.k)?o:null}catch(e){return null}};
+  let o=tryP(s);if(!o){try{o=tryP(decodeURIComponent(escape(s)))}catch(e){}}
+  if(!o)return null;
+  return o.k.filter(a=>Array.isArray(a)&&a[0]&&a[2]).map(a=>({id:String(a[0]),nr:String(a[1]||''),name:String(a[2]),r:a[3]==='g'?'g':'f'}))}
+// Vorschau: neu / geändert / gleich / zusammengeführt (gleicher Name+Nr, andere Kennung)
+function kaderDiff(list){const norm=x=>String(x||'').trim().toLowerCase();
+  return list.map(p=>{const e=kp(p.id);if(e)return{p,kind:(e.name!==p.name||e.nr!==p.nr||e.r!==p.r)?'upd':'same'};
+    const twin=S.kader.find(x=>!list.some(l=>l.id===x.id)&&norm(x.name)===norm(p.name)&&norm(x.nr)===norm(p.nr));
+    return twin?{p,kind:'merge',old:twin.id}:{p,kind:'new'}})}
+function remapId(o,n){const fix=g=>{if(!g)return;['fp','gk'].forEach(k=>{if(g[k])g[k]=g[k].map(x=>x===o?n:x)});
+    ['a','d','g'].forEach(s=>{if(g[s]&&g[s][o]){g[s][n]=g[s][o];delete g[s][o]}});
+    if(g.h2)['a','d','g'].forEach(s=>{const T=g.h2[s];if(T&&T[o]){T[n]=T[o];delete T[o]}});
+    if(g.players&&g.players[o]){g.players[n]=g.players[o];delete g.players[o]}};
+  fix(S.cur);S.archiv.forEach(fix)}
+function applyKader(diff){let nn=0,nu=0,nm=0;
+  diff.forEach(d=>{const p=d.p;
+    if(d.kind==='new'){S.kader.push({...p});nn++}
+    else if(d.kind==='upd'){Object.assign(kp(p.id),{name:p.name,nr:p.nr,r:p.r});nu++}
+    else if(d.kind==='merge'){remapId(d.old,p.id);const e=kp(d.old);if(e){e.id=p.id;e.name=p.name;e.nr=p.nr;e.r=p.r}nm++}});
+  save();autoBackup();return `Kader übernommen: ${nn} neu, ${nu} aktualisiert${nm?`, ${nm} zusammengeführt`:''}`}
+// Kamera-Scan über den eingebauten QR-Leser (BarcodeDetector)
+let scan=null;
+const canScan=()=>'BarcodeDetector' in window&&!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+async function startScan(){const st=document.getElementById('qst'),vid=document.getElementById('qv');if(!vid)return;
+  try{const fm=await BarcodeDetector.getSupportedFormats();if(!fm.includes('qr_code'))throw new Error('QR wird vom Gerät nicht unterstützt');
+    const det=new BarcodeDetector({formats:['qr_code']});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    scan={stream,timer:0};vid.srcObject=stream;await vid.play();if(st)st.textContent='QR-Code des anderen Geräts in den Rahmen halten …';
+    const tick=async()=>{if(!scan)return;try{const r=await det.detect(vid);
+        for(const c of r){const L=parseKader(c.rawValue);if(L){stopScan();showPreview(L);return}}
+        if(r.length&&st)st.textContent='Das ist kein Kader-Code der Spielauswertung.'}catch(e){}
+      scan&&(scan.timer=setTimeout(tick,250))};tick();
+  }catch(e){stopScan();if(st)st.textContent='Kamera nicht verfügbar ('+((e&&e.message)||e)+'). Bitte den Code unten einfügen.';
+    const v=document.getElementById('qv');if(v)v.style.display='none'}}
+function stopScan(){if(!scan)return;clearTimeout(scan.timer);try{scan.stream.getTracks().forEach(t=>t.stop())}catch(e){}scan=null}
+function showPreview(L){if(!L||!L.length){toast('Kein gültiger Kader-Code');return}openSheet({t:'qrp',diff:kaderDiff(L)})}
+async function shareKaderText(){const txt=kaderCode();
+  try{if(isApp()){await nat('Share','share',{title:'Kader Spielauswertung',text:txt,dialogTitle:'Kader-Code teilen'});return}
+    if(navigator.share){await navigator.share({title:'Kader Spielauswertung',text:txt});return}
+    await navigator.clipboard.writeText(txt);toast('Kader-Code in die Zwischenablage kopiert')}
+  catch(e){if(!/cancel|abort/i.test(String(e&&e.message||e)))alert('Teilen fehlgeschlagen: '+((e&&e.message)||e))}}
+function sheetQR(B){const t=sheet.t;
+  if(t==='qrs'){const txt=kaderCode(),n=S.kader.length;
+    B.innerHTML=`<div class="sh"><h2>Kader teilen</h2><button data-act="close" class="x">✕</button></div>`
+      +(n?`<div class="qrbox">${qrSvg(txt)}</div><p class="ctr"><b>${n} Spieler</b> · Auf dem anderen Gerät: <b>Kader → QR empfangen</b> und diesen Code scannen.</p>
+        <div class="bar"><span class="sp"></span><button data-act="qrtxt">Als Text teilen (WhatsApp, Mail …)</button><button data-act="close" class="on">Fertig</button></div>`
+        :'<p class="hint">Der Kader ist noch leer.</p>');return}
+  if(t==='qrr'){B.innerHTML=`<div class="sh"><h2>Kader empfangen</h2><button data-act="close" class="x">✕</button></div>`
+      +(canScan()?`<div class="qrbox"><video id="qv" class="qrv" playsinline muted></video></div><p class="ctr" id="qst">Kamera wird gestartet …</p>`
+        :'<p class="hint" id="qst">Der Kamera-Scan wird auf diesem Gerät nicht unterstützt. Scanne den Code mit der Kamera-App oder Google Lens, kopiere den Text und füge ihn hier ein.</p>')
+      +`<h3>Oder Code einfügen</h3><textarea id="qtx" rows="3" placeholder="SPAK1:…"></textarea><div class="bar"><span class="sp"></span><button data-act="qrchk" class="on">Prüfen</button></div>`;
+    if(canScan())setTimeout(startScan,50);return}
+  if(t==='qrp'){const D=sheet.diff,c=k=>D.filter(d=>d.kind===k).length,lab={new:'neu',upd:'geändert',same:'gleich',merge:'zusammen­führen'};
+    B.innerHTML=`<div class="sh"><h2>Kader übernehmen?</h2><button data-act="close" class="x">✕</button></div>
+      <p><b>${D.length} Spieler</b> im Code: ${c('new')} neu, ${c('upd')} geändert, ${c('merge')} zusammenzuführen, ${c('same')} unverändert.</p>
+      <div class="wrap"><table class="st"><colgroup><col style="width:13%"><col style="width:41%"><col style="width:22%"><col style="width:24%"></colgroup>
+      <thead><tr><th>Nr</th><th>Name</th><th>Rolle</th><th>Status</th></tr></thead><tbody>`
+      +D.map(d=>`<tr><td class="nr">${esc(d.p.nr)}</td><td class="nm">${esc(d.p.name)}</td><td>${d.p.r==='g'?'TW':'Feld'}</td><td class="${d.kind==='same'?'':'calc'}">${lab[d.kind]}</td></tr>`).join('')
+      +`</tbody></table></div><p class="hint">Spieler, die nur auf diesem Gerät existieren, bleiben erhalten. „Zusammengeführt“ heißt: gleicher Name und gleiche Nummer – die bisherigen Zahlen werden diesem Spieler zugeordnet.</p>
+      <div class="bar"><span class="sp"></span><button data-act="close">Abbrechen</button><button data-act="qrok" class="pri">Übernehmen</button></div>`;return}
+}
+
+// ---------- Bereiche / Zustand der Oberfläche ----------
+if(['a','d','g','n'].includes(S.tab)){S.sub=S.tab;S.tab='erf'}
+S.sub=S.sub||'a';if(!['erf','ausw','kader','hist','saison'].includes(S.tab))S.tab=S.kader.length?'erf':'kader';
+let sheet=null;                                   // offenes Fenster: {t:'p',pid,kind} | {t:'h'} | {t:'m'}
+const sgn=x=>x>0?'+'+x:String(x);
+
+// Aktionen: [id, Text, Farbe, Zähler-Änderungen, Anzeige-Zähler]
+const ACT={
+ f:[{g:'Angriff',it:[
+   ['tor','Tor','pos',[['a','t'],['a','w']]],
+   ['fw','Fehlwurf','neu',[['a','w']],o=>v(o.a,'w')-v(o.a,'t')],
+   ['t7','7m-Tor','pos',[['a','t7'],['a','w7']]],
+   ['f7','7m verworfen','neu',[['a','w7']],o=>v(o.a,'w7')-v(o.a,'t7')],
+   ['as','Assist','pos',[['a','as']]],
+   ['h7','7m heraus\u00adgeholt','pos',[['a','h7']]],
+   ['e1','1:1 gewonnen','pos',[['a','e1']]],
+   ['h2','2 Min heraus\u00adgeholt','pos',[['a','h2']]],
+   ['tf','Tech\u00adnischer Fehler','neg',[['a','tf']]],
+   ['pf','Pass-/ Fangfehler','neg',[['a','pf']]]]},
+  {g:'Abwehr',it:[
+   ['st','Steal / abge\u00adfangen','pos',[['d','st']]],
+   ['pe','Fehler provo\u00adziert','pos',[['d','pe']]],
+   ['bl','Ball geblockt','pos',[['d','bl']]],
+   ['z2','2 Minuten erhalten','neg',[['d','z2']]],
+   ['v7','7m verur\u00adsacht','neg',[['d','v7']]],
+   ['v1','1:1 verloren','neg',[['d','v1']]]]}],
+ g:[{g:'Torhüter',it:[
+   ['h','Gehalten','pos',[['g','h']]],
+   ['g','Gegentor','neg',[['g','g']]],
+   ['h7','7m gehalten','pos',[['g','h7'],['g','s7']]],
+   ['s7','7m Gegentor','neg',[['g','s7']],o=>v(o.g,'s7')-v(o.g,'h7')],
+   ['as','Assist','pos',[['g','as']]],
+   ['fp','Fehlpass','neg',[['g','fp']]]]}]};
+const findAct=(kind,id)=>ACT[kind].flatMap(x=>x.it).find(a=>a[0]===id);
+const pdata=(g,pid)=>({a:(g.a||{})[pid]||{},d:(g.d||{})[pid]||{},g:(g.g||{})[pid]||{}});
+const cnt=(a,o)=>a[4]?a[4](o):v(o[a[3][0][0]],a[3][0][1]);
+function doAct(pid,kind,id,d){
+  const a=findAct(kind,id);if(!a)return;if(d<0&&cnt(a,pdata(S.cur,pid))<=0)return;
+  const ch=[];a[3].forEach(([s,k])=>bump(S.cur,s,pid,k,d,ch));if(!ch.length)return;
+  const lbl=`${d>0?'+1':'−1'} ${a[1]} – ${pn(S.cur,pid)} (${S.cur.half||1}. HZ)`;
+  pushUndo(ch,lbl);S.last=lbl;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}save();
+}
+
+// ---------- Spielbericht (regelbasiert, ohne Internet) ----------
+function genReport(g){
+  const own=g.h.heim||'Unsere Mannschaft',opp=g.h.gast||'den Gegner',sum=(sec,ids,k,hf)=>ids.reduce((t,id)=>t+v(pobj(g,sec,id,hf||'all'),k),0);
+  const pl=(n,a,b)=>n===1?a:b,pc=(a,b)=>b?Math.round(a/b*100)+' %':'–',who=id=>{const nr=pnr(g,id);return pn(g,id)+(nr?` (#${nr})`:'')};
+  const parse=x=>{const m=String(x||'').match(/^\s*(\d+)\s*[:\-]\s*(\d+)\s*$/);return m?[+m[1],+m[2]]:null};
+  const S1=[];
+  // Ergebnis: eingetragenes Ergebnis hat Vorrang, sonst erfasster Stand
+  const fin=parse(g.h.erg)||score(g,'all'),[o1,o2]=fin,d=o1-o2;
+  if(o1+o2===0)return 'Für dieses Spiel wurden noch keine Tore erfasst.';
+  if(d>0)S1.push(`${own} gewinnt gegen ${opp} ${d>=8?'deutlich ':d===1?'knapp ':''}mit ${o1}:${o2}.`);
+  else if(d<0)S1.push(`${own} verliert gegen ${opp} ${-d>=8?'deutlich ':d===-1?'knapp ':''}mit ${o1}:${o2}.`);
+  else S1.push(`${own} und ${opp} trennen sich ${o1}:${o2} unentschieden.`);
+  // Halbzeiten
+  const h2data=Object.values(g.h2||{}).some(T=>Object.values(T||{}).some(o=>Object.values(o||{}).some(n=>n>0)));
+  const hz=parse(g.h.hz)||(h2data?score(g,'1'):null);
+  if(hz){const [a,b]=hz,s2=[o1-a,o2-b],lead=x=>Math.sign(x[0]-x[1]);
+    let t=`Zur Pause stand es ${a}:${b}`;
+    if(lead(hz)!==lead(fin)&&lead(fin)!==0)t+=lead(fin)>0?', nach der Pause drehte die Mannschaft das Spiel':', nach der Pause gab die Mannschaft die Führung noch aus der Hand';
+    else if(lead(hz)>0&&lead(fin)>0&&(o1-o2)>(a-b))t+=', in der zweiten Halbzeit wurde der Vorsprung ausgebaut';
+    else if(lead(hz)<0&&lead(fin)<0&&(o2-o1)>(b-a))t+=', in der zweiten Halbzeit wurde der Rückstand größer';
+    if(s2[0]>=0&&s2[1]>=0)t+=` (2. Halbzeit ${s2[0]}:${s2[1]})`;
+    S1.push(t+'.')}
+  // Würfe
+  const F=g.fp,t=sum('a',F,'t'),w=sum('a',F,'w'),t7=sum('a',F,'t7'),w7=sum('a',F,'w7');
+  if(w+w7){let x=`Die Wurfquote lag bei ${pc(t+t7,w+w7)} (${t+t7} ${pl(t+t7,'Tor','Tore')} bei ${w+w7} ${pl(w+w7,'Wurf','Würfen')})`;
+    if(w7)x+=`, vom 7-Meter-Punkt trafen wir ${t7} von ${w7}`;S1.push(x+'.')}
+  // Werfer
+  const sc=F.map(id=>{const o=pobj(g,'a',id,'all');return{id,g:v(o,'t')+v(o,'t7'),w:v(o,'w')+v(o,'w7')}}).filter(x=>x.g>0).sort((a,b)=>b.g-a.g||a.w-b.w);
+  if(sc.length){let x=`Die meisten Tore erzielte ${who(sc[0].id)}: ${sc[0].g} bei ${sc[0].w} ${pl(sc[0].w,'Wurf','Würfen')}`;
+    const more=sc.slice(1,3).filter(s=>s.g>=2);
+    if(more.length)x+=`, dahinter ${more.map(s=>`${who(s.id)} mit ${s.g}`).join(' und ')}`;S1.push(x+'.')}
+  // Vorlagen
+  const asl=F.map(id=>({id,n:v(pobj(g,'a',id,'all'),'as')})).sort((a,b)=>b.n-a.n);
+  if(asl.length&&asl[0].n>=2)S1.push(`Die meisten Vorlagen gab ${who(asl[0].id)} mit ${asl[0].n} Assists.`);
+  // Torhüter
+  const K=g.gk.map(id=>{const o=pobj(g,'g',id,'all');return{id,h:v(o,'h'),gg:v(o,'g'),h7:v(o,'h7'),s7:v(o,'s7')}}).filter(k=>k.h+k.gg+k.s7>0);
+  if(K.length){S1.push((K.length===1?'Im Tor: ':'Im Tor: ')+K.map(k=>`${who(k.id)} mit ${k.h} ${pl(k.h,'Parade','Paraden')} (Quote ${pc(k.h,k.h+k.gg)})`).join(', ')+'.');
+    const h7=K.reduce((s,k)=>s+k.h7,0),s7=K.reduce((s,k)=>s+k.s7,0);if(h7)S1.push(`Dazu ${h7===1?'wurde ein Siebenmeter':'wurden '+h7+' Siebenmeter'} gehalten (von ${s7}).`)}
+  // Fehler
+  const tf=sum('a',F,'tf'),pf=sum('a',F,'pf'),fe=tf+pf;
+  if(fe){let x=fe>=8?`Auffällig viele Ballverluste: ${fe} Fehler`:`Ballverluste: ${fe} Fehler`;
+    x+=` (${tf} technische, ${pf} Pass-/Fangfehler)`;
+    if(h2data){const f2=sum('a',F,'tf','2')+sum('a',F,'pf','2'),f1=fe-f2;if(fe>=4&&f2>=fe*0.65)x+=`, davon ${f2} in der zweiten Halbzeit`;else if(fe>=4&&f1>=fe*0.65)x+=`, davon ${f1} in der ersten Halbzeit`}
+    S1.push(x+'.')}
+  // Abwehr, Zeitstrafen
+  const st=sum('d',F,'st'),bl=sum('d',F,'bl'),z2=sum('d',F,'z2'),v7=sum('d',F,'v7');
+  const ab_=[];if(st)ab_.push(`${st} ${pl(st,'Ballgewinn','Ballgewinne')}`);if(bl)ab_.push(`${bl} ${pl(bl,'geblockter Ball','geblockte Bälle')}`);
+  if(ab_.length)S1.push(`In der Abwehr gab es ${ab_.join(' und ')}${v7?`, verursacht wurden ${v7} ${pl(v7,'Siebenmeter','Siebenmeter')}`:''}.`);
+  if(z2){const red=F.filter(id=>v(pobj(g,'d',id,'all'),'z2')>=3);
+    S1.push(`${z2} ${pl(z2,'Zeitstrafe','Zeitstrafen')}${red.length?`, ${red.map(who).join(' und ')} ${red.length===1?'sah':'sahen'} nach drei Zeitstrafen Rot`:''}.`)}
+  // Beste Gesamtleistung
+  const best=F.map(id=>({id,n:angr(pobj(g,'a',id,'all'))+abw(pobj(g,'d',id,'all'))})).sort((a,b)=>b.n-a.n)[0];
+  if(best&&best.n>=3)S1.push(`Die beste Gesamtbewertung (Angriff + Abwehr) erreichte ${who(best.id)} mit ${sgn(best.n)}.`);
+  return S1.join(' ');
+}
+const reportOf=g=>g.berichtEdit&&g.bericht!=null?g.bericht:genReport(g);
+const fazitLine=g=>{const f=String(g.fazit||'').trim();return f?`Fazit des Trainers${g.fazitVon?' ('+g.fazitVon+')':''}: „${f}“`:''};
+const fullReport=g=>[reportOf(g),fazitLine(g)].filter(Boolean).join('\n\n');
+async function shareText(title,txt){
+  try{if(isApp()){await nat('Share','share',{title,text:txt,dialogTitle:title});return}
+    if(navigator.share){await navigator.share({title,text:txt});return}
+    await navigator.clipboard.writeText(txt);toast('Text in die Zwischenablage kopiert')}
+  catch(e){if(!/cancel|abort/i.test(String(e&&e.message||e)))alert('Teilen fehlgeschlagen: '+((e&&e.message)||e))}}
+
+// ---------- Rollen ----------
+// erf = Erfasser (trägt Spiele ein, sendet sie), tr = Trainer (nur Analyse), all = Beides
+const ROLES={erf:'Erfasser',tr:'Trainer',all:'Erfasser & Trainer'};
+const can=x=>{const r=S.role||'all';return({
+  erfassen:r!=='tr', saison:r!=='erf', edit:r!=='tr', send:r!=='tr', kaderChef:r!=='erf'})[x]};
+function tabsFor(){const r=S.role||'all';return r==='erf'?['erf','ausw','kader','hist']:r==='tr'?['hist','saison','kader','ausw']:['erf','ausw','kader','hist','saison']}
+function fixTab(){if(!tabsFor().includes(S.tab))S.tab=S.role==='tr'?'hist':'erf';if(S.role==='tr'&&S.tab==='ausw'&&!ro())S.tab='hist'}
+// ---------- Oberfläche ----------
+if(!S.role&&(S.archiv.length||S.kader.length))S.role='all';       // bisherige Nutzer: alles wie gehabt
+const segB=(act,cur,opts)=>`<span class="seg">${opts.map(([v_,l])=>`<button data-act="${act}" data-v="${v_}" class="${String(cur)===String(v_)?'on':''}">${l}</button>`).join('')}</span>`;
+function bar(){
+  const T=(k,l)=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${l}</button>`;
+  fixTab();let h;
+  if(S.role==='tr'){
+    h='<span class="navm">'+T('hist','Spiele')+T('saison','Saison')+T('kader','Kader')+(S.tab==='ausw'?'<button class="on">Auswertung</button>':'')+'</span><span class="sp"></span>';
+  }else{
+    const extra={hist:'Historie',saison:'Saison'}[S.tab];
+    h='<span class="navm">'+T('erf','<span class="dsk">Spiel erfassen</span><span class="mob">Erfassen</span>')+T('ausw','Auswertung')+T('kader','Kader')+(extra?`<button class="on">${extra}</button>`:'')+'</span><span class="sp"></span>';
+    if(!ro())h+=`<button data-act="save" class="pri"><span class="dsk">Spiel speichern</span><span class="mob">Speichern</span></button>`;
+  }
+  h+=`<button data-act="menu">☰ Menü</button>`;
+  document.getElementById('bar').innerHTML=h;
+  const H={erf:'Spieler antippen → Aktion wählen. Torhüter haben Schnellknöpfe direkt auf der Kachel.',
+    ausw:ro()?'':'Nur Ansicht. Erfasst wird unter „Spiel erfassen“.',
+    kader:'Spieler anlegen, ändern oder entfernen. Häkchen = beim aktuellen Spiel dabei.',
+    hist:S.role==='tr'?'Spiele der Erfasser importieren und auswerten.':'Gespeicherte Spiele ansehen, als PDF exportieren, an den Trainer senden, bearbeiten oder löschen.',
+    saison:'Summen und Durchschnitte über alle gespeicherten Spiele (das aktuelle Spiel zählt erst nach „Spiel speichern“).'};
+  document.getElementById('hint').textContent=H[S.tab]||'';
+}
+function scoreLine(g,ctrl){
+  const [o1,o2]=score(g,'all'),[a1,a2]=score(g,'1');
+  let h=`<div class="score"><span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gast')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
+  if(ctrl){
+    h+=segB('half',g.half||1,[[1,'1. HZ'],[2,'2. HZ']])
+      +`<button data-act="undo" ${(S.undo||[]).length?'':'disabled'}>↶<span class="dsk"> Rückgängig</span></button>`
+      +`<div class="gkq"><span class="last">${S.last?esc(S.last):'Noch keine Aktion erfasst'}</span><span class="sp"></span>`
+      +`<button data-act="hdlg" class="${g.h.heim||g.h.gast?'':'warn'}">${g.h.heim||g.h.gast?'Spieldaten':'Spieldaten eintragen'}</button></div>`;
+  }
+  return h+'</div>';
+}
+function render(){bar();draw();drawSheet()}
+const isPhone=()=>window.matchMedia('(max-width: 600px)').matches;
+let lastPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==lastPhone){lastPhone=isPhone();render()}});
+// Tabelle (hd, rows, letzte Zeile = Summe) als aufklappbare Karten; sum = Spaltenindizes für die Kurzzeile
+function cardsFrom(t,sum){const L=t.rows.length-1,lab=i=>esc(t.hd[i]);
+  const card=(r,tot)=>`<details class="pc${tot?' tot':''}"><summary><span class="pn">${r[0]?`<span>${esc(r[0])}</span>`:''}${esc(r[1])}</span>
+    <span class="pv">${sum.map(i=>`${lab(i)} <b>${esc(r[i])}</b>`).join(' · ')}</span></summary>
+    <div class="pd">${t.hd.slice(2).map((h,j)=>`<div><span>${esc(h)}</span><b>${esc(r[j+2])}</b></div>`).join('')}</div></details>`;
+  return `<div class="cards">${card(t.rows[L],true)}${t.rows.slice(0,L).map(r=>card(r)).join('')}</div>`}
+function statRows(sec,g,hf){const cols=SEC[sec].cols,ps=lineup(g,LK(sec)),tot={};
+  ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(pobj(g,sec,p.id,hf),c.k)}));
+  const cell=(o,c)=>c.f?c.f(o):v(o,c.k);
+  return{hd:['Nr','Spieler',...cols.map(c=>c.l.replace(/­/g,''))],calc:new Set(),
+    rows:[...ps.map(p=>[p.nr,p.name,...cols.map(c=>cell(pobj(g,sec,p.id,hf),c))]),['','Mannschaft',...cols.map(c=>cell(tot,c))]]}}
+const SUM={a:[3,2,4,14],d:[2,4,5,8],g:[2,3,4,7]};
+
+function tileF(g,p){const o=pdata(g,p.id),A=o.a,z=v(o.d,'z2');
+  return `<button class="tile" data-act="op" data-p="${p.id}" data-k="f">
+    <span class="tn">${p.nr?`<span>${esc(p.nr)}</span>`:''}${esc(p.name)}</span>
+    <span class="ts">Tore ${v(A,'t')}/${v(A,'w')} · 7m ${v(A,'t7')}/${v(A,'w7')}</span>
+    <span class="ts">Angriff ${sgn(angr(A))} · Abwehr ${sgn(abw(o.d))}</span>
+    ${z>=3?'<span class="wn">Rot (3× 2 Min)</span>':z===2?'<span class="wn">⚠ 2× 2 Min</span>':z===1?'<span class="ts">1× 2 Min</span>':''}</button>`}
+function tileG(g,p){const o=pdata(g,p.id).g;
+  return `<div class="tile gk"><button class="tg" data-act="op" data-p="${p.id}" data-k="g">
+    <span class="tn">${p.nr?`<span>${esc(p.nr)}</span>`:''}${esc(p.name)}</span>
+    <span class="ts">Gehalten ${v(o,'h')} · Gegentore ${v(o,'g')} · ${q(v(o,'h'),v(o,'h')+v(o,'g'))}</span>
+    <span class="ts">7m ${v(o,'h7')}/${v(o,'s7')} gehalten · mehr …</span></button>
+    <span class="qk"><button class="go pos" data-act="qa" data-p="${p.id}" data-a="h">+ Gehalten</button><button class="go neg" data-act="qa" data-p="${p.id}" data-a="g">+ Gegentor</button></span></div>`}
+function draw(){
+  const T=document.getElementById('tbl'),t=S.tab;
+  if(t==='erf'){const g=S.cur,F=lineup(g,'fp'),K=lineup(g,'gk'),inArch=S.archiv.some(x=>x.id===g.id);
+    T.innerHTML=(inArch?`<div class="ban"><span>Du bearbeitest ein gespeichertes Spiel (${esc(fD(gDate(g)))} · ${esc(gTitle(g))}). Historie, Bericht und PDF zeigen die Änderungen erst nach „Spiel speichern“.</span><button data-act="save" class="pri">Änderungen speichern</button></div>`:'')
+      +scoreLine(g,true)
+      +`<h3>Feldspieler</h3>`+(F.length?`<div class="tiles">${F.map(p=>tileF(g,p)).join('')}</div>`:'<p class="hint">Noch keine Feldspieler für dieses Spiel. Unten hinzufügen oder im Menü unter „Kader“ anhaken.</p>')
+      +`<h3>Torhüter</h3>`+(K.length?`<div class="tiles gks">${K.map(p=>tileG(g,p)).join('')}</div>`:'<p class="hint">Noch kein Torhüter für dieses Spiel.</p>')
+      +`<div class="add"><input id="an" placeholder="Spieler nachmelden: Name"><input id="ar" class="n" placeholder="Nr" inputmode="numeric">
+        <select id="ao"><option value="f">Feldspieler</option><option value="g">Torhüter</option></select><button data-act="addp">+ Hinzufügen</button></div>`;
+    return}
+  if(t==='ausw'){const g=G(),r=ro(),sub=S.sub||'a';
+    let h=r?`<div class="ban"><span>Gespeichertes Spiel: ${esc(fD(gDate(g)))} · ${esc(gTitle(g))} ${g.h.erg?'· '+esc(g.h.erg):''} (nur Ansicht)</span>
+      ${can('edit')?ab('edit'+g.id,'Bearbeiten','Aktuelles Spiel verwerfen?','edit','data-id="'+g.id+'"'):''}<button data-act="back">${S.role==='tr'?'Zurück zu den Spielen':'Zum aktuellen Spiel'}</button></div>`:'';
+    h+=scoreLine(g,false)+`<div class="bar">${segB('sub',sub,[['r','Bericht'],['a','Angriff'],['d','Abwehr'],['g','Torhüter'],['n','Notizen']])}`
+      +(!['n','r'].includes(sub)?`<span class="lbl">Ansicht</span>${segB('hf',S.hf||'all',[['all','Gesamt'],['1','1. HZ'],['2','2. HZ']])}`:'')
+      +`<span class="sp"></span><button data-act="${r?'hpdf':'pdf'}" data-id="${g.id}">PDF exportieren</button></div>`;
+    if(sub==='r'){const ed=!!g.berichtEdit,stale=ed&&g.berichtBase!=null&&g.berichtBase!==genReport(g);
+      T.innerHTML=h+(stale?`<div class="ban warnb"><span>Die Zahlen haben sich geändert, seit du den Bericht bearbeitet hast. „Neu erzeugen“ übernimmt die aktuellen Zahlen (dein eigener Text geht dabei verloren).</span></div>`:'')+`<div class="bar"><span class="lbl">${ed?'Von Hand bearbeitet':'Automatisch aus den Zahlen erzeugt'+(r?'':' – passt sich beim Erfassen laufend an')}</span><span class="sp"></span>`
+        +`${ed?ab('regen','Neu erzeugen','Eigenen Text ersetzen?','regen'):''}<button data-act="rshare">Bericht teilen</button></div>`
+        +`<textarea id="rtx" class="rtx"></textarea><p class="hint" style="display:block">Du kannst den Text frei ändern oder ergänzen. Er wird mit dem Spiel gespeichert, im PDF auf Seite 1 gedruckt und beim Senden an den Trainer mitgeschickt.</p>`
+        +`<h3>Fazit des Trainers</h3><textarea id="ftx" class="ftx" placeholder="Kurzes Fazit zum Spiel …"></textarea>`
+        +`<p class="hint" style="display:block">🎤 Tipp: In das Feld tippen und auf der Tastatur das Mikrofon antippen – dann einfach sprechen. Das Fazit erscheint als eigener Absatz im Bericht, im PDF, beim Teilen und Senden.</p>`;
+      const fx=document.getElementById('ftx');fx.value=g.fazit||'';
+      fx.oninput=()=>{const tg=ro()?G():S.cur;tg.fazit=fx.value;if(!tg.fazitVon&&S.user)tg.fazitVon=S.user;if(ro())tg.savedAt=Date.now();save()};
+      const x=document.getElementById('rtx');x.value=reportOf(g);
+      x.oninput=()=>{const tg=ro()?G():S.cur;if(!tg.berichtEdit)tg.berichtBase=genReport(tg);tg.bericht=x.value;tg.berichtEdit=true;if(ro())tg.savedAt=Date.now();save()};return}
+    if(sub==='n'){T.innerHTML=h+'<textarea id="nt" placeholder="Notizen zum Spiel …"></textarea>';const x=document.getElementById('nt');x.value=g.notes||'';x.disabled=r;
+      x.oninput=()=>{if(ro())return;S.cur.notes=x.value;save()};return}
+    T.innerHTML=h+(isPhone()?cardsFrom(statRows(sub,g,S.hf||'all'),SUM[sub]):statTable(sub,g,false));return}
+  if(t==='kader')return drawKader(T);
+  if(t==='hist')return drawHist(T);
+  if(t==='saison')return drawSaison(T);
+}
+// ---------- Fenster (Aktionen, Spieldaten, Menü) ----------
+function drawSheet(){const O=document.getElementById('ov'),B=document.getElementById('sheet');
+  if(!sheet){stopScan();O.hidden=true;B.innerHTML='';B.dataset.k='';return}O.hidden=false;
+  if(sheet.t==='qrr'&&B.dataset.k==='qrr')return;          // laufende Kamera nicht neu aufbauen
+  B.dataset.k=sheet.t;if(sheet.t.startsWith('qr')){stopScan();return sheetQR(B)}
+  if(sheet.t==='role')return sheetRole(B);if(sheet.t==='pin')return sheetPin(B);if(sheet.t==='sent')return sheetSent(B);
+  if(sheet.t==='p'){const g=S.cur,pid=sheet.pid,kind=sheet.kind,o=pdata(g,pid),nr=pnr(g,pid);
+    B.innerHTML=`<div class="sh"><h2>${nr?`<span>${esc(nr)}</span> `:''}${esc(pn(g,pid))}</h2><span class="lbl">Erfasst in ${g.half||1}. Halbzeit</span><button data-act="close" class="x">✕</button></div>`
+      +ACT[kind].map(gr=>`<h3>${gr.g}</h3><div class="ag">`+gr.it.map(a=>{const n=cnt(a,o);
+        return `<div class="ab"><button class="go ${a[2]}" data-act="pa" data-a="${a[0]}" data-v="1"><span>${a[1]}</span><b>${n}</b></button><button class="dn" data-act="pa" data-a="${a[0]}" data-v="-1" ${n?'':'disabled'} title="1 abziehen">−</button></div>`}).join('')+'</div>').join('')
+      +'<p class="hint">Antippen zählt +1 und schließt das Fenster. „−“ zieht 1 ab, falls du dich vertippt hast.</p>';return}
+  if(sheet.t==='h'){const g=S.cur,[o1,o2]=score(g,'all'),[a1,a2]=score(g,'1'),F=(k,l,ty,ph)=>`<label>${l}<input data-h="${k}" ${ty?`type="${ty}"`:''} value="${esc(g.h[k]||'')}" placeholder="${ph||''}"></label>`;
+    B.innerHTML=`<div class="sh"><h2>Spieldaten</h2><button data-act="close" class="x">✕</button></div><div class="hd">`
+      +F('heim','Heim')+F('gast','Gast')+F('datum','Datum','date')+F('zeit','Uhrzeit','time')+F('ort','Ort')
+      +F('erg','Ergebnis','',`${o1}:${o2} (automatisch)`)+F('hz','Halbzeit','',hasH2(g)?`${a1}:${a2} (automatisch)`:'automatisch')
+      +`</div><p class="hint">Ergebnis und Halbzeit füllen sich beim Speichern automatisch aus dem erfassten Spielstand, wenn du nichts einträgst.</p><div class="bar"><span class="sp"></span><button data-act="close" class="on">Fertig</button></div>`;return}
+  if(sheet.t==='m'){const M=(act,l,x)=>`<button data-act="${act}" ${x||''}>${l}</button>`;
+    B.innerHTML=`<div class="sh"><h2>Menü</h2><button data-act="close" class="x">✕</button></div><div class="mn">`
+      +(S.role!=='tr'?M('goto','Historie','data-v="hist"'):'')+(can('saison')&&S.role!=='tr'?M('goto','Saison','data-v="saison"'):'')
+      +(can('saison')?M('imp','Spiele / Sicherung importieren'):'')+M('exp','Sicherung exportieren')
+      +(can('erfassen')?M('hdlg','Spieldaten')+ab('new','Neues Spiel (aktuelles verwerfen)','Wirklich verwerfen?','new'):'')
+      +M('role','Rolle wechseln')+`</div><p class="hint" style="display:block;margin-top:10px">Rolle: <b>${ROLES[S.role]||'–'}</b>${S.user?' · Name: '+esc(S.user):''}</p>`;return}
+}
+function sheetRole(B){const first=!S.role;
+  const R=(k,t,d)=>`<button class="rolebtn ${S.role===k?'on':''}" data-act="setrole" data-v="${k}"><b>${t}</b><span>${d}</span></button>`;
+  B.innerHTML=`<div class="sh"><h2>${first?'Willkommen! Wer nutzt dieses Gerät?':'Rolle wechseln'}</h2>${first?'':'<button data-act="close" class="x">✕</button>'}</div>
+    <div class="hd" style="margin-top:4px"><label>Dein Name (wird beim Senden mitgeschickt)<input id="rname" value="${esc(S.user||'')}" placeholder="z. B. Max"></label>
+    <label>PIN zum Rollenwechsel (optional)<input id="rpin" inputmode="numeric" placeholder="${S.pin?'PIN gesetzt – leer lassen = behalten':'leer = ohne PIN'}"></label></div>
+    <div class="roles">${R('erf','Erfasser','Trägt Spiele ein und sendet sie an den Trainer.')}${R('tr','Trainer','Nur Analyse: Spiele empfangen, Auswertung, Saison, Kader verteilen.')}${R('all','Beides','Alles auf einem Gerät: erfassen und auswerten.')}</div>
+    <p class="hint" style="display:block">Name und PIN zuerst eintragen, dann die Rolle antippen. Mit PIN kann die Rolle auf diesem Gerät nur nach Eingabe der PIN geändert werden – praktisch für Geräte von Erfassern.</p>`}
+function sheetPin(B){B.innerHTML=`<div class="sh"><h2>PIN eingeben</h2><button data-act="close" class="x">✕</button></div>
+  <div class="hd"><label>PIN<input id="pinin" type="password" inputmode="numeric" autocomplete="off"></label></div>
+  <div class="bar"><span class="sp"></span><button data-act="pinok" class="on">Weiter</button></div>`;setTimeout(()=>{const x=document.getElementById('pinin');x&&x.focus()},50)}
+function sheetSent(B){const g=S.archiv.find(x=>x.id===sheet.id);
+  B.innerHTML=`<div class="sh"><h2>Spiel gespeichert</h2><button data-act="close" class="x">✕</button></div>
+  <p>${g?esc(gTitle(g))+(g.h.erg?' · '+esc(g.h.erg):''):''}</p><p>Jetzt an den Trainer senden? Es öffnet sich das Teilen-Menü (z. B. WhatsApp, Mail oder ein gemeinsamer Drive-Ordner).</p>
+  <div class="bar"><span class="sp"></span><button data-act="close">Später</button><button data-act="send" data-id="${sheet.id}" class="pri">An Trainer senden</button></div>`}
+function openSheet(x){sheet=x;drawSheet()}
+function closeSheet(){sheet=null;render()}
+
+function statTable(sec,g,edit){
+  const hf=S.hf||'all',cols=SEC[sec].cols,ps=lineup(g,LK(sec)),tot={},P_=id=>pobj(g,sec,id,hf);
+  if(hf!=='all')edit=false;
+  ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(P_(p.id),c.k)}));
+  const cg=`<colgroup><col class="nr"><col class="nm">${cols.map(()=>'<col>').join('')}</colgroup>`;
+  const hd=`<tr><th>Nr</th><th>Spieler</th>${cols.map(c=>`<th class="${c.s||''}${c.f?' calc':''}">${c.l}</th>`).join('')}</tr>`;
+  let b=ps.map(p=>{const o=P_(p.id);
+    return `<tr><td class="nr">${esc(p.nr)}</td><td class="nm">${esc(p.name)}</td>`+cols.map(c=>c.f?`<td class="calc">${c.f(o)}</td>`:
+      edit?`<td class="c"><div class="cc"><button class="pl" data-s="${sec}" data-p="${p.id}" data-k="${c.k}" data-d="1">+</button><button class="mi" data-s="${sec}" data-p="${p.id}" data-k="${c.k}" data-d="-1">−</button><b>${v(o,c.k)}</b></div></td>`
+      :`<td class="ro">${v(o,c.k)}</td>`).join('')+'</tr>'}).join('');
+  if(!ps.length)b=`<tr><td class="empty" colspan="${cols.length+2}">Noch keine ${sec==='g'?'Torhüter':'Feldspieler'} für dieses Spiel ausgewählt. ${edit?'Im Reiter „Kader“ anhaken oder unten hinzufügen.':''}</td></tr>`;
+  b+=`<tr class="tot"><td></td><td class="nm">Gesamt</td>`+cols.map(c=>c.f?`<td class="calc">${c.f(tot)}</td>`:`<td>${tot[c.k]||0}</td>`).join('')+'</tr>';
+  return `<div class="wrap"><table>${cg}<thead>${hd}</thead><tbody>${b}</tbody></table></div>`;
+}
+
+function drawKader(T){
+  const c=S.cur,sel=id=>c.fp.includes(id)||c.gk.includes(id);
+  const rows=[...S.kader].sort((a,b)=>(a.r===b.r?0:a.r==='f'?-1:1)||nrSort(a,b));
+  let h=`<div class="bar"><b>Heute dabei: ${c.fp.length} Feldspieler, ${c.gk.length} Torhüter</b><span class="sp"></span>${can('kaderChef')?'<button data-act="qrs">QR teilen</button>':''}<button data-act="qrr">QR empfangen</button><button data-act="selall">Alle anhaken</button><button data-act="selnone">Keinen</button></div>
+  <div class="wrap"><table class="kt"><colgroup><col class="k1" style="width:70px"><col class="k2" style="width:90px"><col class="k3"><col class="k4" style="width:150px"><col class="k5" style="width:140px"></colgroup>
+  <thead><tr><th>Dabei</th><th>Nr</th><th>Name</th><th>Rolle</th><th></th></tr></thead><tbody>`;
+  h+=rows.map(p=>`<tr><td><input type="checkbox" data-sel="${p.id}" ${sel(p.id)?'checked':''}></td>
+    <td><input data-kr="${p.id}" value="${esc(p.nr)}" inputmode="numeric"></td><td><input data-kn="${p.id}" value="${esc(p.name)}"></td>
+    <td><select data-ko="${p.id}"><option value="f" ${p.r==='f'?'selected':''}>Feldspieler</option><option value="g" ${p.r==='g'?'selected':''}>Torhüter</option></select></td>
+    <td>${!can('kaderChef')?'':ab('delp'+p.id,'<span class="dsk">Entfernen</span><span class="mob">✕</span>','<span class="dsk">Wirklich?</span><span class="mob">OK?</span>','delp','data-id="'+p.id+'"')}</td></tr>`).join('')
+    ||`<tr><td class="empty" colspan="5">Noch keine Spieler im Kader. Lege unten den ersten an.</td></tr>`;
+  h+=`</tbody></table></div><div class="add"><input id="kn" placeholder="Name"><input id="kr" class="n" placeholder="Nr" inputmode="numeric">
+    <select id="ko"><option value="f">Feldspieler</option><option value="g">Torhüter</option></select><button data-act="addk">+ Zum Kader hinzufügen</button></div>
+    <p class="hint">Entfernte Spieler bleiben in gespeicherten Spielen und in der Saisonübersicht erhalten.</p>`;
+  T.innerHTML=h;
+}
+
+function drawHist(T){
+  const L=[...S.archiv].sort((a,b)=>gDate(b).localeCompare(gDate(a))||(b.savedAt-a.savedAt));
+  let h=`<div class="bar"><b>${L.length} gespeicherte${L.length===1?'s':''} Spiel${L.length===1?'':'e'}</b><span class="sp"></span>
+    <button data-act="imp">${S.role==='tr'?'Spiele importieren':'Importieren'}</button><button data-act="exp">Sicherung exportieren</button></div>
+    <p class="hint">${!isApp()?'Automatische Sicherung läuft nur in der App auf dem Tablet.':S.autoB?(S.autoB.w==='fehlgeschlagen'?'⚠ Letzte automatische Sicherung ist fehlgeschlagen – bitte „Sicherung exportieren“ nutzen.':`Automatische Sicherung: zuletzt ${new Date(S.autoB.t).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'})} in ${esc(S.autoB.w)}.`):'Automatische Sicherung: erfolgt bei jedem „Spiel speichern“ in Dokumente/Spielauswertung.'}</p>`;
+  h+=L.map(g=>`<div class="card"><div class="ti"><b>${esc(gTitle(g))}${g.h.erg?' · '+esc(g.h.erg):''}</b>
+    <small>${esc(fD(gDate(g)))}${g.h.ort?' · '+esc(g.h.ort):''} · ${g.fp.length} Feldspieler, ${g.gk.length} Torhüter${g.von?' · erfasst von '+esc(g.von):''}${S.cur.id===g.id?' · gerade in Bearbeitung':''}${g.sent&&can('send')?' · <span class="ok">an Trainer gesendet ✓</span>':''}</small></div>
+    <button data-act="view" data-id="${g.id}">Ansehen</button><button data-act="hpdf" data-id="${g.id}">PDF</button>
+    ${can('send')?`<button data-act="send" data-id="${g.id}" class="${g.sent?'':'pri'}">${g.sent?'Erneut senden':'An Trainer senden'}</button>`:''}
+    ${can('edit')?ab('edit'+g.id,'Bearbeiten','Aktuelles Spiel verwerfen?','edit','data-id="'+g.id+'"'):''}${ab('hdel'+g.id,'Löschen','Wirklich löschen?','hdel','data-id="'+g.id+'"')}</div>`).join('')
+    ||(S.role==='tr'?'<p class="hint" style="display:block">Noch keine Spiele. Die Erfasser senden dir ihre Spiele als Datei (z. B. per WhatsApp) – hier oben auf „Spiele importieren“ tippen und die Dateien auswählen. Mehrere auf einmal sind möglich.</p>':'<p class="hint" style="display:block">Noch keine Spiele gespeichert. Nach dem Spiel auf „Spiel speichern“ tippen.</p>');
+  T.innerHTML=h;
+}
+
+// ---------- Saison ----------
+const FS=[['Sp.',(s,n)=>n,0],['Tore',s=>v(s,'t'),0],['Würfe',s=>v(s,'w'),0],[`Wurf${SH}quote`,s=>q(v(s,'t'),v(s,'w')),1],
+ ['7m Tore / Würfe',s=>v(s,'t7')+'/'+v(s,'w7'),0],['7m-Quote',s=>q(v(s,'t7'),v(s,'w7')),1],['Assists',s=>v(s,'as'),0],
+ [`Tech${SH}nische Fehler`,s=>v(s,'tf'),0],[`Pass-/ Fang${SH}fehler`,s=>v(s,'pf'),0],[`7m heraus${SH}geholt`,s=>v(s,'h7'),0],
+ [`1:1 gewon${SH}nen`,s=>v(s,'e1'),0],[`2 Min heraus${SH}geholt`,s=>v(s,'h2'),0],['Angriff +/−',s=>angr(s),1],['Ø Angriff',(s,n)=>avg(angr(s),n),1],
+ ['Steals',s=>v(s,'st'),0],['Blocks',s=>v(s,'bl'),0],['2 Min erhalten',s=>v(s,'z2'),0],['Abwehr +/−',s=>abw(s),1],['Ø Abwehr',(s,n)=>avg(abw(s),n),1]];
+const GS=[['Sp.',(s,n)=>n,0],['Gehalten',s=>v(s,'h'),0],[`Gegen${SH}treffer`,s=>v(s,'g'),0],['Abwehr-Quote',s=>q(v(s,'h'),v(s,'h')+v(s,'g')),1],
+ ['7m gehalten / 7m',s=>v(s,'h7')+'/'+v(s,'s7'),0],['7m-Quote',s=>q(v(s,'h7'),v(s,'s7')),1],['Assists',s=>v(s,'as'),0],[`Fehl${SH}pässe`,s=>v(s,'fp'),0]];
+function seasons(){return [...new Set(S.archiv.map(seasonOf))].sort().reverse()}
+function agg(){
+  const gs=S.archiv.filter(g=>S.season==='alle'||seasonOf(g)===S.season).sort((a,b)=>gDate(a).localeCompare(gDate(b)));
+  const F={},K={},add=(t,o)=>{for(const k in o||{})t[k]=(t[k]||0)+(o[k]||0)};
+  gs.forEach(g=>{g.fp.forEach(id=>{const r=F[id]||(F[id]={id,n:0,s:{}});r.n++;r.name=pn(g,id);r.nr=pnr(g,id);add(r.s,g.a[id]);add(r.s,g.d[id])});
+    g.gk.forEach(id=>{const r=K[id]||(K[id]={id,n:0,s:{}});r.n++;r.name=pn(g,id);r.nr=pnr(g,id);add(r.s,g.g[id])})});
+  const tot=R=>{const s={};R.forEach(r=>add(s,r.s));return s};
+  const fl=Object.values(F).sort(nrSort),kl=Object.values(K).sort(nrSort);
+  return{games:gs.length,F:fl,K:kl,tF:tot(fl),tK:tot(kl)};
+}
+function seasonRows(def,list,ts,games){return{hd:['Nr','Spieler',...def.map(d=>d[0])],calc:new Set(def.map((d,i)=>d[2]?i+2:-1)),
+  rows:[...list.map(r=>[r.nr,r.name,...def.map(d=>d[1](r.s,r.n))]),['','Mannschaft',...def.map(d=>d[1](ts,games))]]}}
+function htmlTable(t){
+  const cg=`<colgroup><col class="nr"><col class="nm">${t.hd.slice(2).map(()=>'<col>').join('')}</colgroup>`;
+  return `<div class="wrap"><table class="st">${cg}<thead><tr>${t.hd.map((h,i)=>`<th class="${t.calc.has(i)?'calc':''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>`
+    +t.rows.map((r,ri)=>`<tr class="${ri===t.rows.length-1?'tot':''}">`+r.map((c,i)=>`<td class="${i===1?'nm':i===0?'nr':''}${t.calc.has(i)?' calc':''}">${esc(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+function drawSaison(T){
+  if(!S.archiv.length){T.innerHTML='<p class="hint">Noch keine gespeicherten Spiele. Nach dem Spiel auf „Spiel speichern“ tippen, dann erscheinen die Werte hier.</p>';return}
+  const ss=seasons();if(S.season!=='alle'&&!ss.includes(S.season))S.season='alle';
+  const A=agg();
+  T.innerHTML=`<div class="bar"><label style="flex-direction:row;align-items:center;gap:8px">Saison <select id="ssel"><option value="alle">Alle Spiele</option>${ss.map(s=>`<option ${S.season===s?'selected':''}>${s}</option>`).join('')}</select></label>
+    <b>${A.games} Spiel${A.games===1?'':'e'}</b><span class="sp"></span><button data-act="spdf">Saison als PDF</button></div>
+    <h3>Feldspieler</h3>${isPhone()?cardsFrom(seasonRows(FS,A.F,A.tF,A.games),[2,3,5,15,20]):htmlTable(seasonRows(FS,A.F,A.tF,A.games))}<h3>Torhüter</h3>${isPhone()?cardsFrom(seasonRows(GS,A.K,A.tK,A.games),[2,3,4,5]):htmlTable(seasonRows(GS,A.K,A.tK,A.games))}
+    <p class="hint">Saison = Juli bis Juni, nach dem Spieldatum. Ø = pro Spiel, in dem der Spieler dabei war.</p>`;
+  document.getElementById('ssel').onchange=e=>{S.season=e.target.value;save();draw()};
+}
+
+
+// ---------- PDF ----------
+// Vereinslogo (JPEG, 360x277) fürs PDF
+const LOGO={w:360,h:277,b64:'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'};
+function Pdf(){const pg=[];let c;
+  const cl=s=>String(s==null?'':s).replace(/­/g,'').replace(/[−–]/g,'-').replace(/[„“”]/g,'"').replace(/[‘’‚]/g,"'").replace(/…/g,'...').replace(/[^\x20-\xff]/g,'?');
+  let img=null;
+  const P={page(){c=[];pg.push(c)},
+  logo(x,y,dh){if(!LOGO||!LOGO.b64)return;img=img||{w:LOGO.w,h:LOGO.h,d:atob(LOGO.b64)};const dw=dh*img.w/img.h;
+    c.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(x-dw).toFixed(1)} ${y.toFixed(1)} cm /Im1 Do Q`)},
+  T(x,y,s,z,b,a){s=cl(s);if(!s)return;const w=s.length*z*(b?.55:.5);if(a==='c')x-=w/2;if(a==='r')x-=w;
+    c.push(`BT /F${b?2:1} ${z} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${s.replace(/[\\()]/g,'\\$&')}) Tj ET`)},
+  R(x,y,w,h,f){if(f)c.push(`0.62 0.77 0.97 rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f 0 g`);c.push(`0.5 w ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`)},
+  wr(s,mw,z){const W=t=>cl(t).length*z*.53,o=[];let l='';
+    String(s==null?'':s).split(/\s+/).forEach(w=>{let parts=[w];
+      if(W(w)>mw&&w.includes('\u00ad')){parts=[];let cur='';w.split('\u00ad').forEach(sg=>{if(cur&&W(cur+sg+'-')>mw){parts.push(cur+'-');cur=sg}else cur+=sg});parts.push(cur)}
+      parts.forEach((pt,i)=>{const t=l?l+' '+pt:pt;if(l&&(i>0||W(t)>mw)){o.push(l);l=pt}else l=t})});
+    if(l)o.push(l);return o.map(cl)},
+  table(x0,yt,ws,t,rh,hz){hz=hz||6.5;const hh=34,fz=rh>=13?8:7,ls_=hz+0.6;let x=x0;
+    ws.forEach((w,j)=>{P.R(x,yt-hh,w,hh,t.calc.has(j));const ls=P.wr(t.hd[j],w-4,hz);
+      ls.forEach((l,i)=>P.T(x+w/2,yt-hh/2+(ls.length-1)*ls_/2-i*ls_-hz*.35,l,hz,1,'c'));x+=w});
+    t.rows.forEach((r,i)=>{const y=yt-hh-(i+1)*rh,b=i===t.rows.length-1;x=x0;
+      ws.forEach((w,j)=>{P.R(x,y,w,rh,t.calc.has(j));j===1?P.T(x+3,y+rh/2-3,r[j],fz,b):P.T(x+w/2,y+rh/2-3,r[j],fz,b,'c');x+=w})});
+    return yt-hh-t.rows.length*rh},
+  bytes(){let o='%PDF-1.4\n';const of=[],ad=s=>{of.push(o.length);o+=s+'\n'};
+    ad('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj');
+    ad(`2 0 obj\n<</Type/Pages/Kids[${pg.map((_,i)=>`${6+2*i} 0 R`).join(' ')}]/Count ${pg.length}>>\nendobj`);
+    ad('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj');
+    ad('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj');
+    ad(img?`5 0 obj\n<</Type/XObject/Subtype/Image/Width ${img.w}/Height ${img.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${img.d.length}>>\nstream\n${img.d}\nendstream\nendobj`:'5 0 obj\n<<>>\nendobj');
+    const xo=img?'/XObject<</Im1 5 0 R>>':'';
+    pg.forEach((p,i)=>{const s=p.join('\n');
+      ad(`${6+2*i} 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 842 595]/Resources<</Font<</F1 3 0 R/F2 4 0 R>>${xo}>>/Contents ${7+2*i} 0 R>>\nendobj`);
+      ad(`${7+2*i} 0 obj\n<</Length ${s.length}>>\nstream\n${s}\nendstream\nendobj`)});
+    const xr=o.length,m=of.length+1;
+    o+=`xref\n0 ${m}\n0000000000 65535 f \n`+of.map(f=>String(f).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<</Size ${m}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`;
+    return Uint8Array.from(o,ch=>ch.charCodeAt(0)&255)}};
+  return P}
+const fill=(n,first,total)=>{const w=(total-first.reduce((a,b)=>a+b,0))/n;return[...first,...Array(n).fill(w)]};
+function secTable(g,sec){const cols=SEC[sec].cols,ps=lineup(g,LK(sec)),D=g[sec]||{},tot={};
+  ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(D[p.id],c.k)}));
+  const cell=(o,c)=>c.f?c.f(o):v(o,c.k);
+  return{hd:['Nr','Spieler',...cols.map(c=>c.l)],calc:new Set(cols.map((c,j)=>c.f?j+2:-1)),
+    rows:[...ps.map(p=>[p.nr,p.name,...cols.map(c=>cell(D[p.id]||{},c))]),['','Gesamt',...cols.map(c=>cell(tot,c))]]}}
+function gamePdf(g){const P=Pdf(),h=g.h||{},[o1,o2]=score(g,'all'),[a1,a2]=score(g,'1'),[b1,b2]=score(g,'2'),og=v(pobj(g,'x','og','all'),'n');
+  const erg=h.erg||`${o1}:${o2}`,hz=h.hz||(hasH2(g)?`${a1}:${a2}`:'');
+  const head=()=>{P.T(40,562,'Spielauswertung',14,1);
+    P.T(40,546,`Ort: ${h.ort||''}    Uhrzeit: ${h.zeit||''}    Datum: ${fD(h.datum||'')}`,9);
+    P.T(40,533,`Spiel: ${h.heim||''} - ${h.gast||''}    Ergebnis: ${erg}    Halbzeit: ${hz}`,9);
+    P.logo(802,518,54);
+    P.T(728,546,`Erfasst: ${o1}:${o2}`+(hasH2(g)?`  (1. HZ ${a1}:${a2}, 2. HZ ${b1}:${b2})`:''),8,0,'r');
+    if(og)P.T(728,533,`davon Gegentore ohne Torhüter: ${og}`,8,0,'r')};
+  const A=secTable(g,'a'),D=secTable(g,'d'),K=secTable(g,'g');
+  P.page();head();const rep=fullReport(g);let yA=507;
+  if(rep){let ln=[];rep.split(/\n\s*\n/).forEach((par,i)=>{if(i)ln.push('');ln.push(...P.wr(par,758,8.5))});
+    if(ln.length>13){ln=ln.slice(0,13);ln[12]=ln[12].replace(/\s*\S*$/,'')+' ...'}
+    P.T(40,510,'Spielbericht',10,1);ln.forEach((t,i)=>P.T(40,497-i*11,t,8.5,0));yA=497-ln.length*11-14}
+  P.T(40,yA,'Angriff',10,1);
+  P.table(40,yA-5,fill(13,[24,100],762),A,Math.max(11,Math.min(22,(yA-5-40-34)/A.rows.length)));
+  P.page();head();P.T(40,507,'Abwehr',10,1);
+  const rk=Math.min(16,Math.max(11,120/K.rows.length)),rd=Math.max(10,Math.min(18,(462-34-23-34-K.rows.length*rk)/D.rows.length));
+  const end=P.table(40,502,fill(7,[24,100],544),D,rd);
+  P.T(604,507,'Notizen',10,1);P.R(604,end,198,502-end);
+  const ln=[];String(g.notes||'').split('\n').forEach(t=>{const w=P.wr(t,190,8);ln.push(...(w.length?w:['']))});
+  ln.slice(0,Math.floor((480-end)/11)).forEach((t,i)=>P.T(609,490-i*11,t,8,0));
+  P.T(40,end-18,'Torhüter',10,1);P.table(40,end-23,fill(8,[24,100],544),K,rk);
+  return P.bytes()}
+function seasonPdf(){const P=Pdf(),A=agg(),F=seasonRows(FS,A.F,A.tF,A.games),K=seasonRows(GS,A.K,A.tK,A.games);
+  const head=()=>{P.T(40,562,'Saisonübersicht'+(S.season==='alle'?' (alle Spiele)':' '+S.season),14,1);
+    P.T(40,546,`${A.games} gespeicherte Spiele - erstellt am ${new Date().toLocaleDateString('de-DE')}`,9);P.logo(802,528,44)};
+  P.page();head();P.T(40,522,'Feldspieler',10,1);
+  const end=P.table(40,517,fill(19,[24,92],762),F,Math.max(10,Math.min(18,(477-34)/F.rows.length)),5.6);
+  const need=18+34+K.rows.length*16+23;
+  let y=end-18;if(end-40<need){P.page();head();y=522}
+  P.T(40,y,'Torhüter',10,1);P.table(40,y-5,fill(8,[24,92],560),K,16);
+  return P.bytes()}
+
+
+// ---------- Dateien speichern / teilen ----------
+const PL={};
+function plug(n){const C=window.Capacitor;if(!C)return null;
+  if(!PL[n])PL[n]=(C.Plugins&&C.Plugins[n])||(C.registerPlugin&&C.registerPlugin(n))||{};return PL[n]}
+function nat(n,m,o){const p=plug(n);if(p&&typeof p[m]==='function')return p[m](o);return window.Capacitor.nativePromise(n,m,o)}
+const isApp=()=>{const C=window.Capacitor;return !!(C&&(C.isNativePlatform?C.isNativePlatform():C.getPlatform&&C.getPlatform()!=='web'))};
+function b64(by){let s='';for(let i=0;i<by.length;i+=0x8000)s+=String.fromCharCode.apply(null,by.subarray(i,i+0x8000));return btoa(s)}
+const safe=s=>s.replace(/[^\w.-]+/g,'_');
+async function saveFile(nm,by,mime){
+  try{
+    if(isApp()){const r=await nat('Filesystem','writeFile',{path:nm,data:b64(by),directory:'CACHE'});
+      try{await nat('Share','share',{title:nm,files:[r.uri],dialogTitle:'Speichern oder teilen'})}
+      catch(x){if(/cancel/i.test(String(x&&x.message||x)))return false;await nat('Share','share',{title:nm,url:r.uri,dialogTitle:'Speichern oder teilen'})}
+      return true}
+    // Handy/Tablet im Browser (z. B. iPhone/iPad): Teilen-Menü statt Download
+    if(window.matchMedia('(pointer: coarse)').matches&&navigator.canShare){const f=new File([by],nm,{type:mime});
+      if(navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:nm});return true}catch(x){if(/abort|cancel/i.test(String(x&&x.name||x)))return false}}}
+    const u=URL.createObjectURL(new Blob([by],{type:mime})),a=document.createElement('a');
+    a.href=u;a.download=nm;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);return true;
+  }catch(e){if(!/cancel/i.test(String(e&&e.message||e)))alert('Export fehlgeschlagen: '+((e&&e.message)||e));return false}
+}
+const exportGame=g=>saveFile(safe('Spielauswertung_'+(g.h.heim||'')+'_'+(g.h.gast||'')+'_'+gDate(g))+'.pdf',gamePdf(g),'application/pdf');
+
+
+// ---------- Aktionen ----------
+function saveGame(){
+  if(!hasData(S.cur)){toast('Noch keine Daten – nichts zu speichern');return}
+  const g=clone(S.cur),old=g.players||{};g.players={};
+  {const [o1,o2]=score(g,'all'),[a1,a2]=score(g,'1');if(!g.h.erg){g.h.erg=`${o1}:${o2}`;g.ergAuto=true}else if(!g.ergAuto)delete g.ergAuto;if(!g.h.hz&&hasH2(g)){g.h.hz=`${a1}:${a2}`;g.hzAuto=true}else if(!g.hzAuto)delete g.hzAuto;}
+  [...g.fp,...g.gk].forEach(id=>{const p=kp(id);g.players[id]={name:p?p.name:(old[id]?old[id].name:'?'),nr:p?p.nr:(old[id]?old[id].nr:'')}});
+  g.savedAt=Date.now();if(S.user)g.von=S.user;delete g.sent;const i=S.archiv.findIndex(x=>x.id===g.id);if(i>=0)S.archiv[i]=g;else S.archiv.push(g);
+  S.cur=newGame(S.cur.fp,S.cur.gk);S.undo=[];S.last='';S.hf='all';save();render();toast(i>=0?'Änderungen gespeichert':'Spiel gespeichert – zu finden unter „Historie“');
+  autoBackup();
+  if(S.role==='erf')openSheet({t:'sent',id:g.id});
+}
+function addPlayer(name,nr,r,today){name=(name||'').trim();if(!name){toast('Bitte einen Namen eingeben');return false}
+  const id=uid();S.kader.push({id,name,nr:(nr||'').trim(),r});if(today)S.cur[r==='g'?'gk':'fp'].push(id);save();return true}
+function delPlayer(id){S.kader=S.kader.filter(p=>p.id!==id);const c=S.cur;
+  c.fp=c.fp.filter(x=>x!==id);c.gk=c.gk.filter(x=>x!==id);['a','d','g'].forEach(s=>delete c[s][id]);save();render()}
+// ---------- Automatische Sicherung (nur in der App) ----------
+async function autoBackup(){
+  if(!isApp())return;
+  const txt=JSON.stringify({format:'spielauswertung',version:2,exportiert:new Date().toISOString(),kader:S.kader,archiv:S.archiv});
+  const day=new Date().toISOString().slice(0,10),files=['Spielauswertung/Spielauswertung_Sicherung_aktuell.json',`Spielauswertung/Spielauswertung_Sicherung_${day}.json`];
+  for(const [dir,where] of [['DOCUMENTS','Dokumente/Spielauswertung'],['EXTERNAL','App-Ordner (Android/data/…/files/Spielauswertung) – wird beim Deinstallieren gelöscht']]){
+    try{for(const f of files)await nat('Filesystem','writeFile',{path:f,data:txt,directory:dir,encoding:'utf8',recursive:true});
+      S.autoB={t:Date.now(),w:where,ok:dir==='DOCUMENTS'};save();if(S.tab==='hist')draw();return}catch(e){}
+  }
+  S.autoB={t:Date.now(),w:'fehlgeschlagen',ok:false};save();toast('Automatische Sicherung fehlgeschlagen – bitte „Sicherung exportieren“ nutzen');
+}
+function exportBackup(){const data={format:'spielauswertung',version:2,exportiert:new Date().toISOString(),kader:S.kader,archiv:S.archiv};
+  saveFile('Spielauswertung_Sicherung_'+new Date().toISOString().slice(0,10)+'.json',new TextEncoder().encode(JSON.stringify(data)),'application/json')}
+// Ein Spiel an den Trainer senden: Datei mit dem Spiel und den beteiligten Spielern
+async function sendGame(id){const g=S.archiv.find(x=>x.id===id);if(!g)return;
+  const ids=[...g.fp,...g.gk],kad=ids.map(i=>kp(i)||(g.players&&g.players[i]?{id:i,name:g.players[i].name,nr:g.players[i].nr,r:g.gk.includes(i)?'g':'f'}:null)).filter(Boolean);
+  const data={format:'spielauswertung',version:2,typ:'spiel',von:S.user||'',exportiert:new Date().toISOString(),kader:kad,archiv:[g]};
+  const nm=safe('Spiel_'+gDate(g)+'_'+(g.h.heim||'')+'-'+(g.h.gast||''))+'.json';
+  const ok=await saveFile(nm,new TextEncoder().encode(JSON.stringify(data)),'application/json');
+  if(ok){g.sent=Date.now();save();sheet=null;render();toast('Spiel zum Senden übergeben')}}
+// Import (Sicherung oder gesendetes Spiel). Spieler werden über die Kennung oder über Name + Nummer zugeordnet.
+function remapInGame(g,o,n){if(!g||o===n)return;['fp','gk'].forEach(k=>{if(g[k])g[k]=[...new Set(g[k].map(x=>x===o?n:x))]});
+  ['a','d','g'].forEach(s=>{if(g[s]&&g[s][o]){g[s][n]=g[s][o];delete g[s][o]}});
+  if(g.h2)['a','d','g'].forEach(s=>{const T=g.h2[s];if(T&&T[o]){T[n]=T[o];delete T[o]}});
+  if(g.players&&g.players[o]){g.players[n]=g.players[o];delete g.players[o]}}
+function importData(d,c){const norm=x=>String(x||'').trim().toLowerCase(),map={};
+  (d.kader||[]).forEach(p=>{if(!p||!p.id)return;if(kp(p.id))return;
+    const twin=S.kader.find(x=>norm(x.name)===norm(p.name)&&norm(x.nr)===norm(p.nr));
+    if(twin){map[p.id]=twin.id;c.m++}else{S.kader.push({id:p.id,name:p.name,nr:p.nr||'',r:p.r==='g'?'g':'f'});c.k++}});
+  d.archiv.forEach(g0=>{if(!g0||!g0.id)return;const g=clone(g0);for(const o in map)remapInGame(g,o,map[o]);delete g.sent;
+    const i=S.archiv.findIndex(x=>x.id===g.id);
+    if(i<0){S.archiv.push(g);c.n++}else if((g.savedAt||0)>(S.archiv[i].savedAt||0)){S.archiv[i]=g;c.u++}else c.s++})}
+async function importFiles(files){const c={n:0,u:0,s:0,k:0,m:0,bad:0};
+  for(const f of files){let d=null;try{d=JSON.parse(await f.text())}catch(e){}
+    if(!d||d.format!=='spielauswertung'||!Array.isArray(d.archiv)){c.bad++;continue}importData(d,c)}
+  save();render();if(c.n||c.u||c.k)autoBackup();
+  const parts=[`${c.n} Spiel${c.n===1?'':'e'} neu`];if(c.u)parts.push(`${c.u} aktualisiert`);if(c.s)parts.push(`${c.s} schon vorhanden`);
+  if(c.k)parts.push(`${c.k} Spieler neu`);if(c.m)parts.push(`${c.m} Spieler zugeordnet`);if(c.bad)parts.push(`${c.bad} Datei${c.bad===1?'':'en'} nicht lesbar`);
+  toast('Importiert: '+parts.join(', '))}
+function importBackup(txt){let d;try{d=JSON.parse(txt)}catch(e){alert('Die Datei ist keine gültige Sicherung.');return}
+  if(!d||d.format!=='spielauswertung'||!Array.isArray(d.archiv)){alert('Die Datei ist keine Sicherung der Spielauswertung.');return}
+  const c={n:0,u:0,s:0,k:0,m:0};importData(d,c);save();render();autoBackup();
+  toast(`Importiert: ${c.n} Spiele neu${c.u?', '+c.u+' aktualisiert':''}, ${c.k} Spieler neu`)}
+
+// Zählen: verändert Gesamtwert und (in der 2. HZ) den Anteil der 2. Halbzeit; merkt sich die echten Änderungen fürs Rückgängigmachen
+function bump(g,sec,pid,k,d,ch){g[sec]=g[sec]||{};const o=g[sec][pid]||(g[sec][pid]={});const b=v(o,k),a=Math.max(0,b+d),dt=a-b;if(!dt)return;o[k]=a;
+  g.h2=g.h2||{};const T=g.h2[sec]||(g.h2[sec]={}),q=T[pid]||(T[pid]={}),b2=v(q,k);let a2=b2;
+  if((g.half||1)===2)a2=Math.max(0,b2+dt);if(a2>a)a2=a;const dh=a2-b2;if(dh)q[k]=a2;ch.push({sec,pid,k,dt,dh})}
+function pushUndo(ch,label){S.undo=S.undo||[];S.undo.push({gid:S.cur.id,ch,label});if(S.undo.length>200)S.undo.shift()}
+function undo(){const u=(S.undo||[]).pop();if(!u)return;if(u.gid!==S.cur.id){S.undo=[];render();return}
+  const g=S.cur;u.ch.slice().reverse().forEach(c=>{const o=g[c.sec][c.pid];o[c.k]=Math.max(0,v(o,c.k)-c.dt);
+    if(c.dh){const q=g.h2[c.sec][c.pid];q[c.k]=Math.max(0,v(q,c.k)-c.dh)}});
+  S.last='Zurückgenommen: '+u.label;save();render();toast('Zurückgenommen: '+u.label)}
+
+const app=document.getElementById('app');
+app.addEventListener('click',e=>{
+  if(e.target.id==='ov'){if(sheet&&sheet.t==='role'&&!S.role)return;closeSheet();return}               // Tipp neben das Fenster schließt es
+  const t=e.target.closest('[data-t],[data-act]');if(!t||t.disabled)return;
+  if(t.dataset.t){const k=t.dataset.t;if(k!=='ausw')S.view=null;S.tab=k;armed=null;sheet=null;save();render();window.scrollTo(0,0);return}
+  const id=t.dataset.id,find=()=>S.archiv.find(x=>x.id===id);
+  switch(t.dataset.act){
+    case 'op':openSheet({t:'p',pid:t.dataset.p,kind:t.dataset.k});break;
+    case 'pa':doAct(sheet.pid,sheet.kind,t.dataset.a,+t.dataset.v);if(+t.dataset.v>0)closeSheet();else{drawSheet();bar();draw()}break;
+    case 'qa':doAct(t.dataset.p,'g',t.dataset.a,1);render();break;
+    case 'close':closeSheet();break;
+    case 'menu':openSheet({t:'m'});break;
+    case 'role':if(S.pin)openSheet({t:'pin'});else openSheet({t:'role'});break;
+    case 'pinok':{const x=document.getElementById('pinin');if(x&&x.value===S.pin)openSheet({t:'role'});else{toast('PIN falsch');if(x){x.value='';x.focus()}}break}
+    case 'setrole':{const nm=(document.getElementById('rname')||{}).value,pin=((document.getElementById('rpin')||{}).value||'').trim();
+      S.role=t.dataset.v;S.user=(nm||'').trim();if(pin)S.pin=pin;S.view=null;sheet=null;
+      S.tab=S.role==='tr'?'hist':(S.kader.length?'erf':'kader');save();render();window.scrollTo(0,0);toast('Rolle: '+ROLES[S.role]+(pin?' · PIN gesetzt':''));break}
+    case 'send':sendGame(id);break;
+    case 'regen':arm('regen',()=>{const tg=ro()?G():S.cur;delete tg.bericht;delete tg.berichtEdit;delete tg.berichtBase;if(ro())tg.savedAt=Date.now();save();render();toast('Bericht neu erzeugt')});break;
+    case 'rshare':{const g=G();shareText('Spielbericht',`${gTitle(g)}${g.h.erg?' '+g.h.erg:''} – ${fD(gDate(g))}\n\n${fullReport(g)}`);break}
+    case 'qrs':openSheet({t:'qrs'});break;
+    case 'qrr':openSheet({t:'qrr'});break;
+    case 'qrtxt':shareKaderText();break;
+    case 'qrchk':{const L=parseKader((document.getElementById('qtx')||{}).value);if(L&&L.length)showPreview(L);else toast('Kein gültiger Kader-Code – bitte vollständig einfügen');break}
+    case 'qrok':{const m=applyKader(sheet.diff);sheet=null;render();toast(m);break}
+    case 'hdlg':openSheet({t:'h'});break;
+    case 'goto':S.view=null;S.tab=t.dataset.v;sheet=null;save();render();window.scrollTo(0,0);break;
+    case 'sub':S.sub=t.dataset.v;save();render();break;
+    case 'pdf':exportGame(S.cur);break;
+    case 'undo':undo();break;
+    case 'half':S.cur.half=+t.dataset.v;save();render();toast(`Erfassung jetzt: ${t.dataset.v}. Halbzeit`);break;
+    case 'hf':S.hf=t.dataset.v;save();render();break;
+    case 'og':case 'ogm':{if(sheet&&sheet.t==='m')sheet=null;const ch=[],d=t.dataset.act==='og'?1:-1;bump(S.cur,'x','og','n',d,ch);
+      if(ch.length){const l=(d>0?'+1':'−1')+' Gegentor ohne Torhüter';pushUndo(ch,l);S.last=l}save();render();break}
+    case 'save':saveGame();break;
+    case 'new':arm('new',()=>{S.cur=newGame(S.cur.fp,S.cur.gk);S.undo=[];S.last='';S.hf='all';sheet=null;S.tab='erf';save();render();toast('Neues Spiel begonnen')});drawSheet();break;
+    case 'back':S.view=null;S.tab=S.role==='tr'?'hist':'erf';save();render();break;
+    case 'view':S.view=id;S.tab='ausw';S.hf='all';save();render();window.scrollTo(0,0);break;
+    case 'hpdf':{const g=find();if(g)exportGame(g);break}
+    case 'edit':{const go=()=>{const g=find();if(!g)return;S.cur=clone(g);S.cur.x=S.cur.x||{};S.cur.h2=S.cur.h2||{};S.cur.half=S.cur.half||1;
+        {const c=S.cur,[o1,o2]=score(c,'all'),[a1,a2]=score(c,'1');            // ältere Spiele: Wert = erfasster Stand → war automatisch
+         if(c.ergAuto||c.h.erg===`${o1}:${o2}`){delete c.h.erg;delete c.ergAuto}
+         if(c.hzAuto||(c.h.hz&&c.h.hz===`${a1}:${a2}`)){delete c.h.hz;delete c.hzAuto}}
+        S.undo=[];S.last='';S.hf='all';S.view=null;S.tab='erf';save();render();window.scrollTo(0,0);toast('Spiel zum Bearbeiten geöffnet – danach „Spiel speichern“')};
+      if(hasData(S.cur)&&S.cur.id!==id)arm('edit'+id,go);else go();break}
+    case 'hdel':arm('hdel'+id,()=>{S.archiv=S.archiv.filter(x=>x.id!==id);if(S.view===id)S.view=null;save();render();autoBackup();toast('Spiel gelöscht')});break;
+    case 'addp':{const n=document.getElementById('an'),r=document.getElementById('ar'),o=document.getElementById('ao');
+      if(addPlayer(n.value,r.value,o.value,true)){render();toast('Hinzugefügt und im Kader gespeichert')}break}
+    case 'addk':{const n=document.getElementById('kn'),r=document.getElementById('kr'),o=document.getElementById('ko');
+      if(addPlayer(n.value,r.value,o.value,true)){render();setTimeout(()=>{const x=document.getElementById('kn');x&&x.focus()},0)}break}
+    case 'delp':arm('delp'+id,()=>delPlayer(id));break;
+    case 'selall':S.cur.fp=S.kader.filter(p=>p.r==='f').map(p=>p.id);S.cur.gk=S.kader.filter(p=>p.r==='g').map(p=>p.id);save();render();break;
+    case 'selnone':S.cur.fp=[];S.cur.gk=[];save();render();break;
+    case 'exp':sheet=null;drawSheet();exportBackup();break;
+    case 'imp':sheet=null;drawSheet();document.getElementById('imp').click();break;
+    case 'spdf':saveFile(safe('Saisonuebersicht_'+(S.season==='alle'?'alle':S.season))+'.pdf',seasonPdf(),'application/pdf');break;
+  }
+});
+app.addEventListener('input',e=>{const x=e.target,d=x.dataset;
+  if(d.h){S.cur.h[d.h]=x.value;save()}
+  if(d.kn){const p=kp(d.kn);if(p){p.name=x.value;save()}}
+  if(d.kr){const p=kp(d.kr);if(p){p.nr=x.value.trim();save()}}
+});
+app.addEventListener('change',e=>{const x=e.target,d=x.dataset,c=S.cur;
+  if(d.sel){const p=kp(d.sel);if(!p)return;const L=c[p.r==='g'?'gk':'fp'];
+    if(x.checked){if(!L.includes(p.id))L.push(p.id)}else{c.fp=c.fp.filter(i=>i!==p.id);c.gk=c.gk.filter(i=>i!==p.id)}save();render()}
+  if(d.ko){const p=kp(d.ko);if(!p)return;const was=c.fp.includes(p.id)||c.gk.includes(p.id);p.r=x.value;
+    c.fp=c.fp.filter(i=>i!==p.id);c.gk=c.gk.filter(i=>i!==p.id);if(was)c[p.r==='g'?'gk':'fp'].push(p.id);save();render()}
+  if(d.kn||d.kr)render();
+});
+document.getElementById('imp').addEventListener('change',e=>{const L=[...(e.target.files||[])];e.target.value='';if(L.length){sheet=null;importFiles(L)}});
+render();if(!S.role)openSheet({t:'role'});
+// Offline-Speicher nur im Browser (GitHub Pages), nicht in der Android-App
+if(!isApp()&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
