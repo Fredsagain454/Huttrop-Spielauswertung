@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
+<meta name="sa-version" content="2026-10-09.1730">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -168,6 +169,8 @@ tr.tot td.hl{background:#ffd48a}
 .cards2{display:flex;gap:4px;flex-wrap:wrap}.ck{font-size:12px;font-weight:bold;border-radius:4px;padding:1px 6px;color:#fff}
 .ck.red{background:#d32f2f}.ck.blue{background:#1d4ed8}
 @media (max-width:600px){.spx div{flex-direction:column;gap:0}.spx div span{min-width:0}}
+#updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--card);border:2px solid var(--pos);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:94vw;font-weight:bold}
+@media (max-width:600px){#updbar{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
 .cards{display:flex;flex-direction:column;gap:6px}
 details.pc{background:var(--card);border:1px solid var(--line);border-radius:10px}
 details.pc.tot{background:var(--calc)}
@@ -1856,7 +1859,7 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
       +(S.role!=='tr'?M('goto','Historie','data-v="hist"'):'')+(can('saison')&&S.role!=='tr'?M('goto','Saison','data-v="saison"'):'')
       +(can('saison')?M('imp','Spiele / Sicherung importieren'):'')+M('exp','Sicherung exportieren')
       +(can('erfassen')?M('hdlg','Spieldaten')+ab('new','Neues Spiel (aktuelles verwerfen)','Wirklich verwerfen?','new'):'')
-      +M('role','Rolle wechseln')+`</div><p class="hint" style="display:block;margin-top:10px">Rolle: <b>${ROLES[S.role]||'–'}</b>${S.user?' · Name: '+esc(S.user):''}</p>`;return}
+      +(updMode()?M('updchk','Nach Update suchen'):'')+M('role','Rolle wechseln')+`</div><p class="hint" style="display:block;margin-top:10px">Rolle: <b>${ROLES[S.role]||'–'}</b>${S.user?' · Name: '+esc(S.user):''}<br>Version ${esc(APP_VERSION)}${updMode()==='remote'?' · von GitHub':updMode()==='bundled'?' · eingebaut':LS('sa_loader_src')==='nav'?' · eingebaut (Online-Updates nicht möglich)':''}</p>`;return}
 }
 function sheetRole(B){const first=!S.role;
   const R=(k,t,d)=>`<button class="rolebtn ${S.role===k?'on':''}" data-act="setrole" data-v="${k}"><b>${t}</b><span>${d}</span></button>`;
@@ -2044,6 +2047,25 @@ function plug(n){const C=window.Capacitor;if(!C)return null;
   if(!PL[n])PL[n]=(C.Plugins&&C.Plugins[n])||(C.registerPlugin&&C.registerPlugin(n))||{};return PL[n]}
 function nat(n,m,o){const p=plug(n);if(p&&typeof p[m]==='function')return p[m](o);return window.Capacitor.nativePromise(n,m,o)}
 const isApp=()=>{const C=window.Capacitor;return !!(C&&(C.isNativePlatform?C.isNativePlatform():C.getPlatform&&C.getPlatform()!=='web'))};
+// ---------- Online-Updates in der Android-App (über den Lader in der APK) ----------
+const APP_VERSION=(document.querySelector('meta[name="sa-version"]')||{}).content||'';
+const REMOTE_URL='https://fredsagain454.github.io/Huttrop-Spielauswertung/index.html';
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
+const htmlVer=t=>{const m=String(t||'').match(/<meta name="sa-version" content="([^"]+)"/);return m?m[1]:''};
+const updMode=()=>{const m=LS('sa_loader_src');return m==='remote'||m==='bundled'?m:''};
+let updReady=null;
+async function checkRemote(manual){
+  if(!isApp()||!updMode()){if(manual)toast('Online-Updates sind auf diesem Gerät nicht aktiv');return}
+  try{const r=await fetch(REMOTE_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
+    const t=await r.text(),rv=htmlVer(t);
+    if(!rv||!/<\/html>\s*$/i.test(t.trim())||rv===LS('sa_bad_ver'))throw new Error('ungültig');
+    if(rv>APP_VERSION){if(htmlVer(LS('sa_remote_html'))!==rv)LS('sa_remote_html',t);
+      if(htmlVer(LS('sa_remote_html'))===rv){updReady=rv;showUpd()}else if(manual)toast('Update konnte nicht gespeichert werden')}
+    else if(manual)toast('Die App ist aktuell (Version '+APP_VERSION+')');
+  }catch(e){if(manual)toast('Keine Verbindung zu GitHub – später erneut versuchen')}}
+function showUpd(){let b=document.getElementById('updbar');if(!b){b=document.createElement('div');b.id='updbar';document.body.appendChild(b)}
+  b.innerHTML=`<span>Neue Version (${esc(updReady)}) ist geladen.</span><button data-upd="1" class="pri">Jetzt neu starten</button><button data-upd="0">Später</button>`;
+  b.onclick=e=>{const t=e.target.closest('[data-upd]');if(!t)return;if(t.dataset.upd==='1')location.reload();else b.remove()}}
 function b64(by){let s='';for(let i=0;i<by.length;i+=0x8000)s+=String.fromCharCode.apply(null,by.subarray(i,i+0x8000));return btoa(s)}
 const safe=s=>s.replace(/[^\w.-]+/g,'_');
 async function saveFile(nm,by,mime){
@@ -2145,6 +2167,7 @@ app.addEventListener('click',e=>{
     case 'qa':doAct(t.dataset.p,'g',t.dataset.a,1);render();break;
     case 'close':closeSheet();break;
     case 'menu':openSheet({t:'m'});break;
+    case 'updchk':sheet=null;drawSheet();toast('Suche nach Update …');checkRemote(true);break;
     case 'role':if(S.pin)openSheet({t:'pin'});else openSheet({t:'role'});break;
     case 'pinok':{const x=document.getElementById('pinin');if(x&&x.value===S.pin)openSheet({t:'role'});else{toast('PIN falsch');if(x){x.value='';x.focus()}}break}
     case 'setrole':{const nm=(document.getElementById('rname')||{}).value,pin=((document.getElementById('rpin')||{}).value||'').trim();
@@ -2206,6 +2229,8 @@ app.addEventListener('change',e=>{const x=e.target,d=x.dataset,c=S.cur;
 document.getElementById('imp').addEventListener('change',e=>{const L=[...(e.target.files||[])];e.target.value='';if(L.length){sheet=null;importFiles(L)}});
 if(S.cur&&S.cur.h&&(!S.cur.h.heim||S.cur.h.heim==='Winfried Huttrop')){S.cur.h.heim=TEAM;save()}   // früherer Standardname wird ersetzt
 render();if(!S.role)openSheet({t:'role'});
+if(updMode()&&!window.Capacitor){LS('sa_dw_broken','1');LS('sa_loader_src','nav');location.replace('app.html')}   // Sicherheitsnetz: App-Funktionen fehlen → eingebaute Version direkt öffnen
+else{LS('sa_boot_ok',LS('sa_boot_pending')||'');if(updMode())setTimeout(()=>checkRemote(false),2500)}
 // Offline-Speicher nur im Browser (GitHub Pages), nicht in der Android-App
 if(!isApp()&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
