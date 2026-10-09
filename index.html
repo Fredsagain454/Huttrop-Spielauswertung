@@ -157,6 +157,16 @@ h3{margin:14px 0 8px}
 .ftx{min-height:120px;font-size:16px;line-height:1.5;width:100%}
 .rtx{min-height:220px;font-size:16px;line-height:1.5}
 .ban.warnb{background:#fde7c7;color:#5a3a00}
+th.hl,td.hl{background:#ffe2b0;color:#3a2a00}
+td.hl.hlx{background:#ffbf5c;font-weight:bold}
+tr.tot td.hl{background:#ffd48a}
+.spx{background:#fff3df;border:2px solid #f0a53a;border-radius:10px;padding:8px 12px;margin-bottom:8px;color:#3a2a00}
+.spx b{display:block;margin-bottom:4px}
+.spx div{display:flex;gap:8px;padding:2px 0;font-size:15px}.spx div span{font-weight:bold;min-width:170px}
+.spx .sp-rk span{color:#b3261e}.spx .sp-bk span{color:#1d4ed8}.spx .sp-30 span{color:#1b7f3b}
+.cards2{display:flex;gap:4px;flex-wrap:wrap}.ck{font-size:12px;font-weight:bold;border-radius:4px;padding:1px 6px;color:#fff}
+.ck.red{background:#d32f2f}.ck.blue{background:#1d4ed8}
+@media (max-width:600px){.spx div{flex-direction:column;gap:0}.spx div span{min-width:0}}
 .cards{display:flex;flex-direction:column;gap:6px}
 details.pc{background:var(--card);border:1px solid var(--line);border-radius:10px}
 details.pc.tot{background:var(--calc)}
@@ -187,18 +197,20 @@ const avg=(x,n)=>n?(x/n).toFixed(1).replace('.',','):'–';
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const clone=o=>JSON.parse(JSON.stringify(o));
-const angr=o=>v(o,'as')+v(o,'h7')+v(o,'e1')+v(o,'h2')-v(o,'tf')-v(o,'pf');
+const angr=o=>v(o,'as')+v(o,'h7')+v(o,'e1')+v(o,'h2')-v(o,'tf')-v(o,'pf')-v(o,'gv');
 const abw=o=>v(o,'st')+v(o,'pe')+v(o,'bl')-v(o,'z2')-v(o,'v7')-v(o,'v1');
 const SEC={
 a:{t:'Angriff',cols:[
 {k:'w',l:'Würfe'},{k:'t',l:'Tore',also:'w'},{l:`Wurf${SH}quote gesamt`,f:o=>q(v(o,'t'),v(o,'w'))},
 {k:'w7',l:'7m Würfe'},{k:'t7',l:'7m Tore',also:'w7'},{l:`7m Wurf${SH}quote`,f:o=>q(v(o,'t7'),v(o,'w7'))},
+{k:'gv',l:`Gegen${SH}stoß verworfen (−)`,s:'n',hl:1},
 {k:'as',l:'Assists (+)',s:'p'},{k:'tf',l:`Tech${SH}nische Fehler (−)`,s:'n'},{k:'pf',l:`Pass- & Fang${SH}fehler (−)`,s:'n'},
 {k:'h7',l:`7m heraus${SH}geholt (+)`,s:'p'},{k:'e1',l:`1:1 Aktion gewon${SH}nen (+)`,s:'p'},{k:'h2',l:`2 Min heraus${SH}geholt (+)`,s:'p'},
 {l:`Angriffs${SH}leistung (+/−)`,f:angr}]},
 d:{t:'Abwehr',cols:[
 {k:'st',l:`Steals, abge${SH}fangene Bälle (+)`,s:'p'},{k:'pe',l:`Tech${SH}nische Fehler provo${SH}ziert (+)`,s:'p'},{k:'bl',l:'Geblockte Bälle (+)',s:'p'},
 {k:'z2',l:'2 Min erhalten (−)',s:'n'},{k:'v7',l:'7m verursacht (−)',s:'n'},{k:'v1',l:'1:1 Aktion verloren (−)',s:'n'},
+{k:'rk',l:'Rote Karte',hl:1},{k:'bk',l:'Blaue Karte',hl:1},
 {l:`Abwehr${SH}leistung (+/−)`,f:abw}]},
 g:{t:'Torhüter',cols:[
 {k:'h',l:'Gehaltene Würfe'},{k:'g',l:`Gegen${SH}treffer`},{l:'Abwehr-Quote',f:o=>q(v(o,'h'),v(o,'h')+v(o,'g'))},
@@ -1593,9 +1605,10 @@ const sgn=x=>x>0?'+'+x:String(x);
 const ACT={
  f:[{g:'Angriff',it:[
    ['tor','Tor','pos',[['a','t'],['a','w']]],
-   ['fw','Fehlwurf','neu',[['a','w']],o=>v(o.a,'w')-v(o.a,'t')],
+   ['fw','Fehlwurf','neu',[['a','w']],o=>v(o.a,'w')-v(o.a,'t')-v(o.a,'gv')],
    ['t7','7m-Tor','pos',[['a','t7'],['a','w7']]],
    ['f7','7m verworfen','neu',[['a','w7']],o=>v(o.a,'w7')-v(o.a,'t7')],
+   ['gv','Gegen\u00adstoß verworfen','neu',[['a','gv'],['a','w']]],
    ['as','Assist','pos',[['a','as']]],
    ['h7','7m heraus\u00adgeholt','pos',[['a','h7']]],
    ['e1','1:1 gewonnen','pos',[['a','e1']]],
@@ -1608,7 +1621,9 @@ const ACT={
    ['bl','Ball geblockt','pos',[['d','bl']]],
    ['z2','2 Minuten erhalten','neg',[['d','z2']]],
    ['v7','7m verur\u00adsacht','neg',[['d','v7']]],
-   ['v1','1:1 verloren','neg',[['d','v1']]]]}],
+   ['v1','1:1 verloren','neg',[['d','v1']]],
+   ['rk','Rote Karte','neg',[['d','rk']]],
+   ['bk','Blaue Karte','neg',[['d','bk']]]]}],
  g:[{g:'Torhüter',it:[
    ['h','Gehalten','pos',[['g','h']]],
    ['g','Gegentor','neg',[['g','g']]],
@@ -1616,12 +1631,31 @@ const ACT={
    ['s7','7m Gegentor','neg',[['g','s7']],o=>v(o.g,'s7')-v(o.g,'h7')],
    ['as','Assist','pos',[['g','as']]],
    ['fp','Fehlpass','neg',[['g','fp']]]]}]};
+// Torfolge ist nur verlässlich, wenn jedes eigene Tor mitgeschrieben wurde (Spiele ab diesem Update)
+const ownGoals=g=>g.fp.reduce((t,id)=>t+v(pobj(g,'a',id,'all'),'t')+v(pobj(g,'a',id,'all'),'t7'),0);
+const tlOk=g=>Array.isArray(g.tl)&&g.tl.length===ownGoals(g);
+function goal30(g){if(ownGoals(g)<30)return null;if(!tlOk(g))return{unknown:true};const e=g.tl[29];return{pid:e.p,k:e.k,h:e.h}}
+const whoS=(g,id)=>{const nr=pnr(g,id);return pn(g,id)+(nr?` (#${nr})`:'')};
+// Besondere Ereignisse: 30. Tor, Rote/Blaue Karte, verworfene Gegenstöße
+function specials(g){const L=[],F=g.fp,D=k=>F.map(id=>({id,n:v(pobj(g,'d',id,'all'),k)})).filter(x=>x.n>0);
+  const g30=goal30(g);
+  if(g30)L.push({t:'30',l:'30. Tor',v:g30.unknown?'nicht ermittelbar (Spiel vor dem Update erfasst)':whoS(g,g30.pid)+(g30.k==='t7'?' per Siebenmeter':'')+(g30.h?` · ${g30.h}. HZ`:'')});
+  const rk=D('rk'),z3=F.filter(id=>v(pobj(g,'d',id,'all'),'z2')>=3&&!v(pobj(g,'d',id,'all'),'rk'));
+  if(rk.length||z3.length)L.push({t:'rk',l:'Rote Karte',v:[...rk.map(x=>whoS(g,x.id)+(x.n>1?' ('+x.n+'×)':'')),...z3.map(id=>whoS(g,id)+' (nach 3× 2 Min)')].join(', ')});
+  const bk=D('bk');if(bk.length)L.push({t:'bk',l:'Blaue Karte',v:bk.map(x=>whoS(g,x.id)+(x.n>1?' ('+x.n+'×)':'')).join(', ')});
+  const gv=F.map(id=>({id,n:v(pobj(g,'a',id,'all'),'gv')})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  if(gv.length){const n=gv.reduce((s,x)=>s+x.n,0);L.push({t:'gv',l:'Gegenstoß verworfen',v:`${n}× – `+gv.map(x=>whoS(g,x.id)+(x.n>1?' ('+x.n+')':'')).join(', ')})}
+  return L}
 const findAct=(kind,id)=>ACT[kind].flatMap(x=>x.it).find(a=>a[0]===id);
 const pdata=(g,pid)=>({a:(g.a||{})[pid]||{},d:(g.d||{})[pid]||{},g:(g.g||{})[pid]||{}});
 const cnt=(a,o)=>a[4]?a[4](o):v(o[a[3][0][0]],a[3][0][1]);
 function doAct(pid,kind,id,d){
   const a=findAct(kind,id);if(!a)return;if(d<0&&cnt(a,pdata(S.cur,pid))<=0)return;
   const ch=[];a[3].forEach(([s,k])=>bump(S.cur,s,pid,k,d,ch));if(!ch.length)return;
+  if(id==='tor'||id==='t7'){const g=S.cur;g.tl=g.tl||[];
+    if(d>0){g.tl.push({p:pid,k:id,h:g.half||1});ch.push({tl:'add'});
+      if(g.tl.length===30&&tlOk(g))setTimeout(()=>toast('🍺 Das 30. Tor: '+pn(g,pid)+(pnr(g,pid)?' (#'+pnr(g,pid)+')':'')),400)}
+    else for(let i=g.tl.length-1;i>=0;i--)if(g.tl[i].p===pid&&g.tl[i].k===id){ch.push({tl:'del',i,e:g.tl.splice(i,1)[0]});break}}
   const lbl=`${d>0?'+1':'−1'} ${a[1]} – ${pn(S.cur,pid)} (${S.cur.half||1}. HZ)`;
   pushUndo(ch,lbl);S.last=lbl;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}save();
 }
@@ -1657,6 +1691,8 @@ function genReport(g){
   if(sc.length){let x=`Die meisten Tore erzielte ${who(sc[0].id)}: ${sc[0].g} bei ${sc[0].w} ${pl(sc[0].w,'Wurf','Würfen')}`;
     const more=sc.slice(1,3).filter(s=>s.g>=2);
     if(more.length)x+=`, dahinter ${more.map(s=>`${who(s.id)} mit ${s.g}`).join(' und ')}`;S1.push(x+'.')}
+  {const g30=goal30(g);if(g30&&!g30.unknown)S1.push(`Das 30. Tor erzielte ${who(g30.pid)}${g30.k==='t7'?' per Siebenmeter':''}.`)}
+  {const gv=sum('a',F,'gv');if(gv)S1.push(`${gv} ${pl(gv,'Gegenstoß wurde','Gegenstöße wurden')} vergeben.`)}
   // Vorlagen
   const asl=F.map(id=>({id,n:v(pobj(g,'a',id,'all'),'as')})).sort((a,b)=>b.n-a.n);
   if(asl.length&&asl[0].n>=2)S1.push(`Die meisten Vorlagen gab ${who(asl[0].id)} mit ${asl[0].n} Assists.`);
@@ -1676,6 +1712,9 @@ function genReport(g){
   if(ab_.length)S1.push(`In der Abwehr gab es ${ab_.join(' und ')}${v7?`, verursacht wurden ${v7} ${pl(v7,'Siebenmeter','Siebenmeter')}`:''}.`);
   if(z2){const red=F.filter(id=>v(pobj(g,'d',id,'all'),'z2')>=3);
     S1.push(`${z2} ${pl(z2,'Zeitstrafe','Zeitstrafen')}${red.length?`, ${red.map(who).join(' und ')} ${red.length===1?'sah':'sahen'} nach drei Zeitstrafen Rot`:''}.`)}
+  {const rk=F.filter(id=>v(pobj(g,'d',id,'all'),'rk')),bk=F.filter(id=>v(pobj(g,'d',id,'all'),'bk'));
+    if(rk.length)S1.push(`Die Rote Karte sah ${rk.map(who).join(' und ')}${bk.length?`, die Blaue Karte ${bk.map(who).join(' und ')}`:''}.`);
+    else if(bk.length)S1.push(`Die Blaue Karte sah ${bk.map(who).join(' und ')}.`)}
   // Beste Gesamtleistung
   const best=F.map(id=>({id,n:angr(pobj(g,'a',id,'all'))+abw(pobj(g,'d',id,'all'))})).sort((a,b)=>b.n-a.n)[0];
   if(best&&best.n>=3)S1.push(`Die beste Gesamtbewertung (Angriff + Abwehr) erreichte ${who(best.id)} mit ${sgn(best.n)}.`);
@@ -1744,14 +1783,15 @@ function statRows(sec,g,hf){const cols=SEC[sec].cols,ps=lineup(g,LK(sec)),tot={}
   const cell=(o,c)=>c.f?c.f(o):v(o,c.k);
   return{hd:['Nr','Spieler',...cols.map(c=>c.l.replace(/­/g,''))],calc:new Set(),
     rows:[...ps.map(p=>[p.nr,p.name,...cols.map(c=>cell(pobj(g,sec,p.id,hf),c))]),['','Mannschaft',...cols.map(c=>cell(tot,c))]]}}
-const SUM={a:[3,2,4,14],d:[2,4,5,8],g:[2,3,4,7]};
+const SUM={a:[3,2,4,8,15],d:[2,5,8,9,10],g:[2,3,4,7]};
 
-function tileF(g,p){const o=pdata(g,p.id),A=o.a,z=v(o.d,'z2');
+function tileF(g,p){const o=pdata(g,p.id),A=o.a,z=v(o.d,'z2'),rk=v(o.d,'rk'),bk=v(o.d,'bk');
   return `<button class="tile" data-act="op" data-p="${p.id}" data-k="f">
     <span class="tn">${p.nr?`<span>${esc(p.nr)}</span>`:''}${esc(p.name)}</span>
     <span class="ts">Tore ${v(A,'t')}/${v(A,'w')} · 7m ${v(A,'t7')}/${v(A,'w7')}</span>
     <span class="ts">Angriff ${sgn(angr(A))} · Abwehr ${sgn(abw(o.d))}</span>
-    ${z>=3?'<span class="wn">Rot (3× 2 Min)</span>':z===2?'<span class="wn">⚠ 2× 2 Min</span>':z===1?'<span class="ts">1× 2 Min</span>':''}</button>`}
+    ${rk||bk?`<span class="cards2">${rk?'<span class="ck red">Rote Karte</span>':''}${bk?'<span class="ck blue">Blaue Karte</span>':''}</span>`:''}
+    ${rk?'':z>=3?'<span class="wn">Rot (3× 2 Min)</span>':z===2?'<span class="wn">⚠ 2× 2 Min</span>':z===1?'<span class="ts">1× 2 Min</span>':''}</button>`}
 function tileG(g,p){const o=pdata(g,p.id).g;
   return `<div class="tile gk"><button class="tg" data-act="op" data-p="${p.id}" data-k="g">
     <span class="tn">${p.nr?`<span>${esc(p.nr)}</span>`:''}${esc(p.name)}</span>
@@ -1771,6 +1811,7 @@ function draw(){
   if(t==='ausw'){const g=G(),r=ro(),sub=S.sub||'a';
     let h=r?`<div class="ban"><span>Gespeichertes Spiel: ${esc(fD(gDate(g)))} · ${esc(gTitle(g))} ${g.h.erg?'· '+esc(g.h.erg):''} (nur Ansicht)</span>
       ${can('edit')?ab('edit'+g.id,'Bearbeiten','Aktuelles Spiel verwerfen?','edit','data-id="'+g.id+'"'):''}<button data-act="back">${S.role==='tr'?'Zurück zu den Spielen':'Zum aktuellen Spiel'}</button></div>`:'';
+    {const sp=specials(g);if(sp.length)h+=`<div class="spx"><b>Besondere Ereignisse</b>${sp.map(x=>`<div class="sp-${x.t}"><span>${x.l}</span>${esc(x.v)}</div>`).join('')}</div>`}
     h+=scoreLine(g,false)+`<div class="bar">${segB('sub',sub,[['r','Bericht'],['a','Angriff'],['d','Abwehr'],['g','Torhüter'],['n','Notizen']])}`
       +(!['n','r'].includes(sub)?`<span class="lbl">Ansicht</span>${segB('hf',S.hf||'all',[['all','Gesamt'],['1','1. HZ'],['2','2. HZ']])}`:'')
       +`<span class="sp"></span><button data-act="${r?'hpdf':'pdf'}" data-id="${g.id}">PDF exportieren</button></div>`;
@@ -1836,13 +1877,13 @@ function statTable(sec,g,edit){
   if(hf!=='all')edit=false;
   ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(P_(p.id),c.k)}));
   const cg=`<colgroup><col class="nr"><col class="nm">${cols.map(()=>'<col>').join('')}</colgroup>`;
-  const hd=`<tr><th>Nr</th><th>Spieler</th>${cols.map(c=>`<th class="${c.s||''}${c.f?' calc':''}">${c.l}</th>`).join('')}</tr>`;
+  const hd=`<tr><th>Nr</th><th>Spieler</th>${cols.map(c=>`<th class="${c.s||''}${c.f?' calc':''}${c.hl?' hl':''}">${c.l}</th>`).join('')}</tr>`;
   let b=ps.map(p=>{const o=P_(p.id);
     return `<tr><td class="nr">${esc(p.nr)}</td><td class="nm">${esc(p.name)}</td>`+cols.map(c=>c.f?`<td class="calc">${c.f(o)}</td>`:
       edit?`<td class="c"><div class="cc"><button class="pl" data-s="${sec}" data-p="${p.id}" data-k="${c.k}" data-d="1">+</button><button class="mi" data-s="${sec}" data-p="${p.id}" data-k="${c.k}" data-d="-1">−</button><b>${v(o,c.k)}</b></div></td>`
-      :`<td class="ro">${v(o,c.k)}</td>`).join('')+'</tr>'}).join('');
+      :`<td class="ro${c.hl?' hl':''}${c.hl&&v(o,c.k)?' hlx':''}">${v(o,c.k)}</td>`).join('')+'</tr>'}).join('');
   if(!ps.length)b=`<tr><td class="empty" colspan="${cols.length+2}">Noch keine ${sec==='g'?'Torhüter':'Feldspieler'} für dieses Spiel ausgewählt. ${edit?'Im Reiter „Kader“ anhaken oder unten hinzufügen.':''}</td></tr>`;
-  b+=`<tr class="tot"><td></td><td class="nm">Gesamt</td>`+cols.map(c=>c.f?`<td class="calc">${c.f(tot)}</td>`:`<td>${tot[c.k]||0}</td>`).join('')+'</tr>';
+  b+=`<tr class="tot"><td></td><td class="nm">Gesamt</td>`+cols.map(c=>c.f?`<td class="calc">${c.f(tot)}</td>`:`<td class="${c.hl?'hl':''}">${tot[c.k]||0}</td>`).join('')+'</tr>';
   return `<div class="wrap"><table>${cg}<thead>${hd}</thead><tbody>${b}</tbody></table></div>`;
 }
 
@@ -1879,7 +1920,7 @@ function drawHist(T){
 
 // ---------- Saison ----------
 const FS=[['Sp.',(s,n)=>n,0],['Tore',s=>v(s,'t'),0],['Würfe',s=>v(s,'w'),0],[`Wurf${SH}quote`,s=>q(v(s,'t'),v(s,'w')),1],
- ['7m Tore / Würfe',s=>v(s,'t7')+'/'+v(s,'w7'),0],['7m-Quote',s=>q(v(s,'t7'),v(s,'w7')),1],['Assists',s=>v(s,'as'),0],
+ ['7m Tore / Würfe',s=>v(s,'t7')+'/'+v(s,'w7'),0],['7m-Quote',s=>q(v(s,'t7'),v(s,'w7')),1],[`Gegen${SH}stoß verwor${SH}fen`,s=>v(s,'gv'),0,1],['Assists',s=>v(s,'as'),0],
  [`Tech${SH}nische Fehler`,s=>v(s,'tf'),0],[`Pass-/ Fang${SH}fehler`,s=>v(s,'pf'),0],[`7m heraus${SH}geholt`,s=>v(s,'h7'),0],
  [`1:1 gewon${SH}nen`,s=>v(s,'e1'),0],[`2 Min heraus${SH}geholt`,s=>v(s,'h2'),0],['Angriff +/−',s=>angr(s),1],['Ø Angriff',(s,n)=>avg(angr(s),n),1],
  ['Steals',s=>v(s,'st'),0],['Blocks',s=>v(s,'bl'),0],['2 Min erhalten',s=>v(s,'z2'),0],['Abwehr +/−',s=>abw(s),1],['Ø Abwehr',(s,n)=>avg(abw(s),n),1]];
@@ -1895,12 +1936,12 @@ function agg(){
   const fl=Object.values(F).sort(nrSort),kl=Object.values(K).sort(nrSort);
   return{games:gs.length,F:fl,K:kl,tF:tot(fl),tK:tot(kl)};
 }
-function seasonRows(def,list,ts,games){return{hd:['Nr','Spieler',...def.map(d=>d[0])],calc:new Set(def.map((d,i)=>d[2]?i+2:-1)),
+function seasonRows(def,list,ts,games){return{hd:['Nr','Spieler',...def.map(d=>d[0])],calc:new Set(def.map((d,i)=>d[2]?i+2:-1)),hl:new Set(def.map((d,i)=>d[3]?i+2:-1)),
   rows:[...list.map(r=>[r.nr,r.name,...def.map(d=>d[1](r.s,r.n))]),['','Mannschaft',...def.map(d=>d[1](ts,games))]]}}
 function htmlTable(t){
   const cg=`<colgroup><col class="nr"><col class="nm">${t.hd.slice(2).map(()=>'<col>').join('')}</colgroup>`;
-  return `<div class="wrap"><table class="st">${cg}<thead><tr>${t.hd.map((h,i)=>`<th class="${t.calc.has(i)?'calc':''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>`
-    +t.rows.map((r,ri)=>`<tr class="${ri===t.rows.length-1?'tot':''}">`+r.map((c,i)=>`<td class="${i===1?'nm':i===0?'nr':''}${t.calc.has(i)?' calc':''}">${esc(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
+  return `<div class="wrap"><table class="st">${cg}<thead><tr>${t.hd.map((h,i)=>`<th class="${t.calc.has(i)?'calc':''}${t.hl&&t.hl.has(i)?' hl':''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>`
+    +t.rows.map((r,ri)=>`<tr class="${ri===t.rows.length-1?'tot':''}">`+r.map((c,i)=>`<td class="${i===1?'nm':i===0?'nr':''}${t.calc.has(i)?' calc':''}${t.hl&&t.hl.has(i)?' hl'+(c&&c!=='0'&&ri<t.rows.length-1?' hlx':''):''}">${esc(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
 function drawSaison(T){
   if(!S.archiv.length){T.innerHTML='<p class="hint">Noch keine gespeicherten Spiele. Nach dem Spiel auf „Spiel speichern“ tippen, dann erscheinen die Werte hier.</p>';return}
@@ -1908,7 +1949,7 @@ function drawSaison(T){
   const A=agg();
   T.innerHTML=`<div class="bar"><label style="flex-direction:row;align-items:center;gap:8px">Saison <select id="ssel"><option value="alle">Alle Spiele</option>${ss.map(s=>`<option ${S.season===s?'selected':''}>${s}</option>`).join('')}</select></label>
     <b>${A.games} Spiel${A.games===1?'':'e'}</b><span class="sp"></span><button data-act="spdf">Saison als PDF</button></div>
-    <h3>Feldspieler</h3>${isPhone()?cardsFrom(seasonRows(FS,A.F,A.tF,A.games),[2,3,5,15,20]):htmlTable(seasonRows(FS,A.F,A.tF,A.games))}<h3>Torhüter</h3>${isPhone()?cardsFrom(seasonRows(GS,A.K,A.tK,A.games),[2,3,4,5]):htmlTable(seasonRows(GS,A.K,A.tK,A.games))}
+    <h3>Feldspieler</h3>${isPhone()?cardsFrom(seasonRows(FS,A.F,A.tF,A.games),[2,3,5,8,16,21]):htmlTable(seasonRows(FS,A.F,A.tF,A.games))}<h3>Torhüter</h3>${isPhone()?cardsFrom(seasonRows(GS,A.K,A.tK,A.games),[2,3,4,5]):htmlTable(seasonRows(GS,A.K,A.tK,A.games))}
     <p class="hint">Saison = Juli bis Juni, nach dem Spieldatum. Ø = pro Spiel, in dem der Spieler dabei war.</p>`;
   document.getElementById('ssel').onchange=e=>{S.season=e.target.value;save();draw()};
 }
@@ -1925,17 +1966,18 @@ function Pdf(){const pg=[];let c;
     c.push(`q ${dw.toFixed(1)} 0 0 ${dh.toFixed(1)} ${(x-dw).toFixed(1)} ${y.toFixed(1)} cm /Im1 Do Q`)},
   T(x,y,s,z,b,a){s=cl(s);if(!s)return;const w=s.length*z*(b?.55:.5);if(a==='c')x-=w/2;if(a==='r')x-=w;
     c.push(`BT /F${b?2:1} ${z} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${s.replace(/[\\()]/g,'\\$&')}) Tj ET`)},
-  R(x,y,w,h,f){if(f)c.push(`0.62 0.77 0.97 rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f 0 g`);c.push(`0.5 w ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`)},
+  R(x,y,w,h,f){if(f)c.push(`${f==='hl'?'1 0.86 0.62':'0.62 0.77 0.97'} rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f 0 g`);c.push(`0.5 w ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`)},
   wr(s,mw,z){const W=t=>cl(t).length*z*.53,o=[];let l='';
     String(s==null?'':s).split(/\s+/).forEach(w=>{let parts=[w];
       if(W(w)>mw&&w.includes('\u00ad')){parts=[];let cur='';w.split('\u00ad').forEach(sg=>{if(cur&&W(cur+sg+'-')>mw){parts.push(cur+'-');cur=sg}else cur+=sg});parts.push(cur)}
       parts.forEach((pt,i)=>{const t=l?l+' '+pt:pt;if(l&&(i>0||W(t)>mw)){o.push(l);l=pt}else l=t})});
     if(l)o.push(l);return o.map(cl)},
   table(x0,yt,ws,t,rh,hz){hz=hz||6.5;const hh=34,fz=rh>=13?8:7,ls_=hz+0.6;let x=x0;
-    ws.forEach((w,j)=>{P.R(x,yt-hh,w,hh,t.calc.has(j));const ls=P.wr(t.hd[j],w-4,hz);
+    const fl=j=>t.calc.has(j)?true:(t.hl&&t.hl.has(j)?'hl':false);
+    ws.forEach((w,j)=>{P.R(x,yt-hh,w,hh,fl(j));const ls=P.wr(t.hd[j],w-4,hz);
       ls.forEach((l,i)=>P.T(x+w/2,yt-hh/2+(ls.length-1)*ls_/2-i*ls_-hz*.35,l,hz,1,'c'));x+=w});
     t.rows.forEach((r,i)=>{const y=yt-hh-(i+1)*rh,b=i===t.rows.length-1;x=x0;
-      ws.forEach((w,j)=>{P.R(x,y,w,rh,t.calc.has(j));j===1?P.T(x+3,y+rh/2-3,r[j],fz,b):P.T(x+w/2,y+rh/2-3,r[j],fz,b,'c');x+=w})});
+      ws.forEach((w,j)=>{P.R(x,y,w,rh,fl(j));j===1?P.T(x+3,y+rh/2-3,r[j],fz,b):P.T(x+w/2,y+rh/2-3,r[j],fz,b,'c');x+=w})});
     return yt-hh-t.rows.length*rh},
   bytes(){let o='%PDF-1.4\n';const of=[],ad=s=>{of.push(o.length);o+=s+'\n'};
     ad('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj');
@@ -1955,7 +1997,7 @@ const fill=(n,first,total)=>{const w=(total-first.reduce((a,b)=>a+b,0))/n;return
 function secTable(g,sec){const cols=SEC[sec].cols,ps=lineup(g,LK(sec)),D=g[sec]||{},tot={};
   ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(D[p.id],c.k)}));
   const cell=(o,c)=>c.f?c.f(o):v(o,c.k);
-  return{hd:['Nr','Spieler',...cols.map(c=>c.l)],calc:new Set(cols.map((c,j)=>c.f?j+2:-1)),
+  return{hd:['Nr','Spieler',...cols.map(c=>c.l)],calc:new Set(cols.map((c,j)=>c.f?j+2:-1)),hl:new Set(cols.map((c,j)=>c.hl?j+2:-1)),
     rows:[...ps.map(p=>[p.nr,p.name,...cols.map(c=>cell(D[p.id]||{},c))]),['','Gesamt',...cols.map(c=>cell(tot,c))]]}}
 function gamePdf(g){const P=Pdf(),h=g.h||{},[o1,o2]=score(g,'all'),[a1,a2]=score(g,'1'),[b1,b2]=score(g,'2'),og=v(pobj(g,'x','og','all'),'n');
   const erg=h.erg||`${o1}:${o2}`,hz=h.hz||(hasH2(g)?`${a1}:${a2}`:'');
@@ -1970,21 +2012,23 @@ function gamePdf(g){const P=Pdf(),h=g.h||{},[o1,o2]=score(g,'all'),[a1,a2]=score
   if(rep){let ln=[];rep.split(/\n\s*\n/).forEach((par,i)=>{if(i)ln.push('');ln.push(...P.wr(par,758,8.5))});
     if(ln.length>13){ln=ln.slice(0,13);ln[12]=ln[12].replace(/\s*\S*$/,'')+' ...'}
     P.T(40,510,'Spielbericht',10,1);ln.forEach((t,i)=>P.T(40,497-i*11,t,8.5,0));yA=497-ln.length*11-14}
+  {const sp=specials(g);if(sp.length){const ls=P.wr('Besondere Ereignisse: '+sp.map(x=>x.l+': '+x.v).join('   |   '),758,8.5).slice(0,3);
+    if(rep)yA+=4;ls.forEach((t,i)=>P.T(40,yA-i*11,t,8.5,i===0?1:0));yA-=ls.length*11+12}}
   P.T(40,yA,'Angriff',10,1);
-  P.table(40,yA-5,fill(13,[24,100],762),A,Math.max(11,Math.min(22,(yA-5-40-34)/A.rows.length)));
+  P.table(40,yA-5,fill(SEC.a.cols.length,[24,100],762),A,Math.max(11,Math.min(22,(yA-5-40-34)/A.rows.length)));
   P.page();head();P.T(40,507,'Abwehr',10,1);
   const rk=Math.min(16,Math.max(11,120/K.rows.length)),rd=Math.max(10,Math.min(18,(462-34-23-34-K.rows.length*rk)/D.rows.length));
-  const end=P.table(40,502,fill(7,[24,100],544),D,rd);
+  const end=P.table(40,502,fill(SEC.d.cols.length,[24,100],544),D,rd);
   P.T(604,507,'Notizen',10,1);P.R(604,end,198,502-end);
   const ln=[];String(g.notes||'').split('\n').forEach(t=>{const w=P.wr(t,190,8);ln.push(...(w.length?w:['']))});
   ln.slice(0,Math.floor((480-end)/11)).forEach((t,i)=>P.T(609,490-i*11,t,8,0));
-  P.T(40,end-18,'Torhüter',10,1);P.table(40,end-23,fill(8,[24,100],544),K,rk);
+  P.T(40,end-18,'Torhüter',10,1);P.table(40,end-23,fill(SEC.g.cols.length,[24,100],544),K,rk);
   return P.bytes()}
 function seasonPdf(){const P=Pdf(),A=agg(),F=seasonRows(FS,A.F,A.tF,A.games),K=seasonRows(GS,A.K,A.tK,A.games);
   const head=()=>{P.T(40,562,'Saisonübersicht'+(S.season==='alle'?' (alle Spiele)':' '+S.season),14,1);
     P.T(40,546,`${A.games} gespeicherte Spiele - erstellt am ${new Date().toLocaleDateString('de-DE')}`,9);P.logo(802,528,44)};
   P.page();head();P.T(40,522,'Feldspieler',10,1);
-  const end=P.table(40,517,fill(19,[24,92],762),F,Math.max(10,Math.min(18,(477-34)/F.rows.length)),5.6);
+  const end=P.table(40,517,fill(FS.length,[24,92],762),F,Math.max(10,Math.min(18,(477-34)/F.rows.length)),5.6);
   const need=18+34+K.rows.length*16+23;
   let y=end-18;if(end-40<need){P.page();head();y=522}
   P.T(40,y,'Torhüter',10,1);P.table(40,y-5,fill(8,[24,92],560),K,16);
@@ -2080,7 +2124,9 @@ function bump(g,sec,pid,k,d,ch){g[sec]=g[sec]||{};const o=g[sec][pid]||(g[sec][p
   if((g.half||1)===2)a2=Math.max(0,b2+dt);if(a2>a)a2=a;const dh=a2-b2;if(dh)q[k]=a2;ch.push({sec,pid,k,dt,dh})}
 function pushUndo(ch,label){S.undo=S.undo||[];S.undo.push({gid:S.cur.id,ch,label});if(S.undo.length>200)S.undo.shift()}
 function undo(){const u=(S.undo||[]).pop();if(!u)return;if(u.gid!==S.cur.id){S.undo=[];render();return}
-  const g=S.cur;u.ch.slice().reverse().forEach(c=>{const o=g[c.sec][c.pid];o[c.k]=Math.max(0,v(o,c.k)-c.dt);
+  const g=S.cur;u.ch.slice().reverse().forEach(c=>{
+    if(c.tl){g.tl=g.tl||[];if(c.tl==='add')g.tl.pop();else g.tl.splice(c.i,0,c.e);return}
+    const o=g[c.sec][c.pid];o[c.k]=Math.max(0,v(o,c.k)-c.dt);
     if(c.dh){const q=g.h2[c.sec][c.pid];q[c.k]=Math.max(0,v(q,c.k)-c.dh)}});
   S.last='Zurückgenommen: '+u.label;save();render();toast('Zurückgenommen: '+u.label)}
 
