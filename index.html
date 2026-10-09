@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
-<meta name="sa-version" content="2026-10-09.1745">
+<meta name="sa-version" content="1.0.0">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -2114,6 +2114,9 @@ const isApp=()=>{const C=window.Capacitor;return !!(C&&(C.isNativePlatform?C.isN
 const APP_VERSION=(document.querySelector('meta[name="sa-version"]')||{}).content||'';
 const REMOTE_URL='https://fredsagain454.github.io/Huttrop-Spielauswertung/index.html';
 const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
+
+const vparts=x=>{const m=String(x||'').trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?$/);return m?[+m[1],+m[2],+(m[3]||0)]:[0,0,0]};   // alte Datums-Versionen zählen als 0.0.0
+const vnewer=(a,b)=>{const x=vparts(a),y=vparts(b);for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]>y[i]}return false};
 const htmlVer=t=>{const m=String(t||'').match(/<meta name="sa-version" content="([^"]+)"/);return m?m[1]:''};
 const updMode=()=>{const m=LS('sa_loader_src');return m==='remote'||m==='bundled'?m:''};
 let updReady=null;
@@ -2122,7 +2125,7 @@ async function checkRemote(manual){
   try{const r=await fetch(REMOTE_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
     const t=await r.text(),rv=htmlVer(t);
     if(!rv||!/<\/html>\s*$/i.test(t.trim())||rv===LS('sa_bad_ver'))throw new Error('ungültig');
-    if(rv>APP_VERSION){if(htmlVer(LS('sa_remote_html'))!==rv)LS('sa_remote_html',t);
+    if(vnewer(rv,APP_VERSION)){if(htmlVer(LS('sa_remote_html'))!==rv)LS('sa_remote_html',t);
       if(htmlVer(LS('sa_remote_html'))===rv){updReady=rv;showUpd()}else if(manual)toast('Update konnte nicht gespeichert werden')}
     else if(manual)toast('Die App ist aktuell (Version '+APP_VERSION+')');
   }catch(e){if(manual)toast('Keine Verbindung zu GitHub – später erneut versuchen')}}
