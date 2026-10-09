@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
-<meta name="sa-version" content="2026-10-09.1730">
+<meta name="sa-version" content="2026-10-09.1745">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -171,6 +171,16 @@ tr.tot td.hl{background:#ffd48a}
 @media (max-width:600px){.spx div{flex-direction:column;gap:0}.spx div span{min-width:0}}
 #updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--card);border:2px solid var(--pos);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:94vw;font-weight:bold}
 @media (max-width:600px){#updbar{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
+tr.pr{cursor:pointer}tr.pr:hover td,tr.pr:active td{background:var(--calc)}
+.ptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}
+.pt{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}
+.pt span{font-size:12px;opacity:.75}.pt b{font-size:24px}.pt small{font-size:12px;opacity:.75}
+.pcw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px}
+.pchart{display:block}
+.pchart .pz{stroke:var(--line);stroke-width:1}.pchart .pb{fill:var(--acc)}.pchart .pp{fill:var(--pos)}.pchart .pn{fill:var(--neg)}
+.pchart text{fill:var(--fg);font:11px Arial,sans-serif;text-anchor:middle}.pchart .pv{font-weight:bold;font-size:12px}.pchart .pl{opacity:.7}
+.ptw{overflow-x:auto}.ptw table{min-width:760px}.ptw td,.ptw th{padding:6px 4px;font-size:13px}
+.pbtn{margin:0 12px 12px;min-height:44px}
 .cards{display:flex;flex-direction:column;gap:6px}
 details.pc{background:var(--card);border:1px solid var(--line);border-radius:10px}
 details.pc.tot{background:var(--calc)}
@@ -1779,10 +1789,10 @@ const isPhone=()=>window.matchMedia('(max-width: 600px)').matches;
 let lastPhone=isPhone();window.addEventListener('resize',()=>{if(isPhone()!==lastPhone){lastPhone=isPhone();render()}});
 // Tabelle (hd, rows, letzte Zeile = Summe) als aufklappbare Karten; sum = Spaltenindizes für die Kurzzeile
 function cardsFrom(t,sum){const L=t.rows.length-1,lab=i=>esc(t.hd[i]);
-  const card=(r,tot)=>`<details class="pc${tot?' tot':''}"><summary><span class="pn">${r[0]?`<span>${esc(r[0])}</span>`:''}${esc(r[1])}</span>
+  const card=(r,tot,id)=>`<details class="pc${tot?' tot':''}"><summary><span class="pn">${r[0]?`<span>${esc(r[0])}</span>`:''}${esc(r[1])}</span>
     <span class="pv">${sum.map(i=>`${lab(i)} <b>${esc(r[i])}</b>`).join(' · ')}</span></summary>
-    <div class="pd">${t.hd.slice(2).map((h,j)=>`<div><span>${esc(h)}</span><b>${esc(r[j+2])}</b></div>`).join('')}</div></details>`;
-  return `<div class="cards">${card(t.rows[L],true)}${t.rows.slice(0,L).map(r=>card(r)).join('')}</div>`}
+    <div class="pd">${t.hd.slice(2).map((h,j)=>`<div><span>${esc(h)}</span><b>${esc(r[j+2])}</b></div>`).join('')}</div>${id?`<button data-act="prof" data-id="${id}" class="pbtn">Spielerprofil öffnen</button>`:''}</details>`;
+  return `<div class="cards">${card(t.rows[L],true)}${t.rows.slice(0,L).map((r,i)=>card(r,false,t.ids&&t.ids[i])).join('')}</div>`}
 function statRows(sec,g,hf){const cols=SEC[sec].cols,ps=lineup(g,LK(sec)),tot={};
   ps.forEach(p=>cols.forEach(c=>{if(c.k)tot[c.k]=(tot[c.k]||0)+v(pobj(g,sec,p.id,hf),c.k)}));
   const cell=(o,c)=>c.f?c.f(o):v(o,c.k);
@@ -1842,6 +1852,7 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
   if(!sheet){stopScan();O.hidden=true;B.innerHTML='';B.dataset.k='';return}O.hidden=false;
   if(sheet.t==='qrr'&&B.dataset.k==='qrr')return;          // laufende Kamera nicht neu aufbauen
   B.dataset.k=sheet.t;if(sheet.t.startsWith('qr')){stopScan();return sheetQR(B)}
+  if(sheet.t==='prof')return sheetProf(B);
   if(sheet.t==='role')return sheetRole(B);if(sheet.t==='pin')return sheetPin(B);if(sheet.t==='sent')return sheetSent(B);
   if(sheet.t==='p'){const g=S.cur,pid=sheet.pid,kind=sheet.kind,o=pdata(g,pid),nr=pnr(g,pid);
     B.innerHTML=`<div class="sh"><h2>${nr?`<span>${esc(nr)}</span> `:''}${esc(pn(g,pid))}</h2><span class="lbl">Erfasst in ${g.half||1}. Halbzeit</span><button data-act="close" class="x">✕</button></div>`
@@ -1942,12 +1953,12 @@ function agg(){
   const fl=Object.values(F).sort(nrSort),kl=Object.values(K).sort(nrSort);
   return{games:gs.length,F:fl,K:kl,tF:tot(fl),tK:tot(kl)};
 }
-function seasonRows(def,list,ts,games){return{hd:['Nr','Spieler',...def.map(d=>d[0])],calc:new Set(def.map((d,i)=>d[2]?i+2:-1)),hl:new Set(def.map((d,i)=>d[3]?i+2:-1)),
+function seasonRows(def,list,ts,games){return{hd:['Nr','Spieler',...def.map(d=>d[0])],calc:new Set(def.map((d,i)=>d[2]?i+2:-1)),hl:new Set(def.map((d,i)=>d[3]?i+2:-1)),ids:list.map(r=>r.id),
   rows:[...list.map(r=>[r.nr,r.name,...def.map(d=>d[1](r.s,r.n))]),['','Mannschaft',...def.map(d=>d[1](ts,games))]]}}
 function htmlTable(t){
   const cg=`<colgroup><col class="nr"><col class="nm">${t.hd.slice(2).map(()=>'<col>').join('')}</colgroup>`;
   return `<div class="wrap"><table class="st">${cg}<thead><tr>${t.hd.map((h,i)=>`<th class="${t.calc.has(i)?'calc':''}${t.hl&&t.hl.has(i)?' hl':''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>`
-    +t.rows.map((r,ri)=>`<tr class="${ri===t.rows.length-1?'tot':''}">`+r.map((c,i)=>`<td class="${i===1?'nm':i===0?'nr':''}${t.calc.has(i)?' calc':''}${t.hl&&t.hl.has(i)?' hl'+(c&&c!=='0'&&ri<t.rows.length-1?' hlx':''):''}">${esc(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
+    +t.rows.map((r,ri)=>`<tr class="${ri===t.rows.length-1?'tot':''}${t.ids&&ri<t.rows.length-1?' pr':''}"${t.ids&&ri<t.rows.length-1?` data-act="prof" data-id="${t.ids[ri]}" title="Spielerprofil öffnen"`:''}>`+r.map((c,i)=>`<td class="${i===1?'nm':i===0?'nr':''}${t.calc.has(i)?' calc':''}${t.hl&&t.hl.has(i)?' hl'+(c&&c!=='0'&&ri<t.rows.length-1?' hlx':''):''}">${esc(c)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
 function drawSaison(T){
   if(!S.archiv.length){T.innerHTML='<p class="hint">Noch keine gespeicherten Spiele. Nach dem Spiel auf „Spiel speichern“ tippen, dann erscheinen die Werte hier.</p>';return}
@@ -1956,10 +1967,62 @@ function drawSaison(T){
   T.innerHTML=`<div class="bar"><label style="flex-direction:row;align-items:center;gap:8px">Saison <select id="ssel"><option value="alle">Alle Spiele</option>${ss.map(s=>`<option ${S.season===s?'selected':''}>${s}</option>`).join('')}</select></label>
     <b>${A.games} Spiel${A.games===1?'':'e'}</b><span class="sp"></span><button data-act="spdf">Saison als PDF</button></div>
     <h3>Feldspieler</h3>${isPhone()?cardsFrom(seasonRows(FS,A.F,A.tF,A.games),[2,3,5,8,16,21]):htmlTable(seasonRows(FS,A.F,A.tF,A.games))}<h3>Torhüter</h3>${isPhone()?cardsFrom(seasonRows(GS,A.K,A.tK,A.games),[2,3,4,5]):htmlTable(seasonRows(GS,A.K,A.tK,A.games))}
-    <p class="hint">Saison = Juli bis Juni, nach dem Spieldatum. Ø = pro Spiel, in dem der Spieler dabei war.</p>`;
+    <p class="hint" style="display:block">Tipp auf einen Spieler öffnet sein Spielerprofil. Saison = Juli bis Juni, nach dem Spieldatum. Ø = pro Spiel, in dem der Spieler dabei war.</p>`;
   document.getElementById('ssel').onchange=e=>{S.season=e.target.value;save();draw()};
 }
 
+// ---------- Spielerprofil ----------
+function profData(pid){
+  const gs=S.archiv.filter(g=>(S.season==='alle'||seasonOf(g)===S.season)&&(g.fp.includes(pid)||g.gk.includes(pid))).sort((a,b)=>gDate(a).localeCompare(gDate(b)));
+  const p=kp(pid),last=gs[gs.length-1];
+  const name=p?p.name:(last?pn(last,pid):'?'),nr=p?p.nr:(last?pnr(last,pid):''),gk=gs.some(g=>g.gk.includes(pid))&&!gs.some(g=>g.fp.includes(pid))||(!gs.length&&p&&p.r==='g');
+  const opp=g=>g.h.gast||'?',ergT=g=>g.h.erg||score(g,'all').join(':');
+  const rows=gs.map(g=>{const a=pobj(g,'a',pid,'all'),d=pobj(g,'d',pid,'all'),k=pobj(g,'g',pid,'all');return{g,a,d,k,opp:opp(g),erg:ergT(g)}});
+  return{pid,name,nr,gk,rows}}
+// Einfaches Säulendiagramm (eine Reihe, eine Achse); neg=true zeichnet um eine Nulllinie (grün/rot)
+function barSvg(vals,labs,{neg=false,fmt=v=>v,unit=''}={}){
+  const n=vals.length;if(!n)return '';
+  const W=Math.round(Math.max(n*46,Math.min(window.innerWidth||800,1000)-74)),H=170,top=22,bot=34,ph=H-top-bot,slot=(W-20)/n,bw=Math.min(34,slot-12),mc=Math.max(4,Math.floor(slot/6.4));
+  const cut=t=>t.length>mc?t.slice(0,mc-1)+'…':t;
+  const mx=Math.max(1,...vals.map(v=>Math.abs(v))),zero=neg&&vals.some(v=>v<0)?top+ph/2:top+ph,sc=(neg&&vals.some(v=>v<0)?ph/2:ph)/mx;
+  let s=`<svg class="pchart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><line x1="6" x2="${W-6}" y1="${zero}" y2="${zero}" class="pz"/>`;
+  vals.forEach((v,i)=>{const cx=10+(i+.5)*((W-20)/n),h=Math.abs(v)*sc,y=v>=0?zero-h:zero,cls=neg?(v>=0?'pp':'pn'):'pb';
+    s+=`<g><title>${esc(labs[i].full)}: ${fmt(v)}${unit}</title>`
+      +`<rect x="${(cx-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,v?2:0).toFixed(1)}" rx="3" class="${cls}"/>`
+      +(n<=20?`<text x="${cx.toFixed(1)}" y="${(v>=0?y-5:y+h+13).toFixed(1)}" class="pv">${fmt(v)}</text>`:'')
+      +`<text x="${cx.toFixed(1)}" y="${H-18}" class="pl">${esc(labs[i].d)}</text><text x="${cx.toFixed(1)}" y="${H-5}" class="pl">${esc(cut(labs[i].o))}</text></g>`});
+  return `<div class="pcw">${s}</svg></div>`}
+function sheetProf(B){const P=profData(sheet.id),R=P.rows,n=R.length,avg1=x=>n?(x/n).toFixed(1).replace('.',','):'–';
+  const sum=(f)=>R.reduce((t,r)=>t+f(r),0);
+  const labs=R.map(r=>({d:fD(gDate(r.g)).slice(0,6),o:r.opp,full:fD(gDate(r.g))+' gegen '+r.opp}));
+  const tile=(l,v,x)=>`<div class="pt"><span>${l}</span><b>${v}</b>${x?`<small>${x}</small>`:''}</div>`;
+  let h=`<div class="sh"><h2>${P.nr?`<span>${esc(P.nr)}</span> `:''}${esc(P.name)}</h2><span class="lbl">${S.season==='alle'?'Alle Spiele':'Saison '+esc(S.season)}</span><button data-act="close" class="x">✕</button></div>`;
+  if(!n){B.innerHTML=h+'<p class="hint" style="display:block">Für diesen Spieler gibt es in diesem Zeitraum noch keine gespeicherten Spiele.</p>';return}
+  if(!P.gk){
+    const T=sum(r=>v(r.a,'t')+v(r.a,'t7')),W=sum(r=>v(r.a,'w')+v(r.a,'w7')),t7=sum(r=>v(r.a,'t7')),w7=sum(r=>v(r.a,'w7'));
+    const ang=sum(r=>angr(r.a)),ab=sum(r=>abw(r.d)),z2=sum(r=>v(r.d,'z2')),rk=sum(r=>v(r.d,'rk')),bk=sum(r=>v(r.d,'bk'));
+    h+=`<div class="ptiles">${tile('Spiele',n)}${tile('Tore',T,'Ø '+avg1(T)+' pro Spiel')}${tile('Wurfquote',q(T,W),T+' von '+W)}${tile('7 Meter',t7+'/'+w7,q(t7,w7))}
+      ${tile('Assists',sum(r=>v(r.a,'as')))}${tile('Angriff +/−',sgn(ang),'Ø '+avg1(ang))}${tile('Abwehr +/−',sgn(ab),'Ø '+avg1(ab))}${tile('Zeitstrafen',z2,(rk?rk+'× Rot ':'')+(bk?bk+'× Blau':''))}</div>`;
+    h+=`<h3>Tore pro Spiel</h3>`+barSvg(R.map(r=>v(r.a,'t')+v(r.a,'t7')),labs);
+    h+=`<h3>Wurfquote pro Spiel</h3>`+barSvg(R.map(r=>{const w=v(r.a,'w')+v(r.a,'w7');return w?Math.round((v(r.a,'t')+v(r.a,'t7'))/w*100):0}),labs,{unit:' %'});
+    h+=`<h3>Gesamtbewertung pro Spiel (Angriff + Abwehr)</h3>`+barSvg(R.map(r=>angr(r.a)+abw(r.d)),labs,{neg:true,fmt:sgn});
+    h+=`<h3>Alle Spiele</h3><div class="wrap ptw"><table class="st"><thead><tr><th>Datum</th><th>Gegner</th><th>Erg.</th><th>Tore / Würfe</th><th>Quote</th><th>7m</th><th>Assists</th><th>Fehler</th><th>Gegen­stoß verw.</th><th>2 Min</th><th>Karte</th><th class="calc">Angriff</th><th class="calc">Abwehr</th></tr></thead><tbody>`
+      +R.slice().reverse().map(r=>{const t=v(r.a,'t')+v(r.a,'t7'),w=v(r.a,'w')+v(r.a,'w7');
+        return `<tr data-act="view" data-id="${r.g.id}" class="pr"><td>${esc(fD(gDate(r.g)))}</td><td class="nm">${esc(r.opp)}</td><td>${esc(r.erg)}</td><td>${t} / ${w}</td><td>${q(t,w)}</td><td>${v(r.a,'t7')}/${v(r.a,'w7')}</td><td>${v(r.a,'as')}</td><td>${v(r.a,'tf')+v(r.a,'pf')}</td><td class="hl">${v(r.a,'gv')}</td><td>${v(r.d,'z2')}</td><td>${v(r.d,'rk')?'<span class="ck red">Rot</span>':''}${v(r.d,'bk')?' <span class="ck blue">Blau</span>':''}</td><td class="calc">${sgn(angr(r.a))}</td><td class="calc">${sgn(abw(r.d))}</td></tr>`}).join('')+'</tbody></table></div>';
+  }else{
+    const Hh=sum(r=>v(r.k,'h')),G=sum(r=>v(r.k,'g')),h7=sum(r=>v(r.k,'h7')),s7=sum(r=>v(r.k,'s7'));
+    h+=`<div class="ptiles">${tile('Spiele',n)}${tile('Paraden',Hh,'Ø '+avg1(Hh)+' pro Spiel')}${tile('Gegentore',G,'Ø '+avg1(G))}${tile('Abwehrquote',q(Hh,Hh+G))}${tile('7m gehalten',h7+'/'+s7,q(h7,s7))}${tile('Assists',sum(r=>v(r.k,'as')))}</div>`;
+    h+=`<h3>Paraden pro Spiel</h3>`+barSvg(R.map(r=>v(r.k,'h')),labs);
+    h+=`<h3>Abwehrquote pro Spiel</h3>`+barSvg(R.map(r=>{const x=v(r.k,'h')+v(r.k,'g');return x?Math.round(v(r.k,'h')/x*100):0}),labs,{unit:' %'});
+    h+=`<h3>Alle Spiele</h3><div class="wrap ptw"><table class="st"><thead><tr><th>Datum</th><th>Gegner</th><th>Erg.</th><th>Gehalten</th><th>Gegentore</th><th class="calc">Quote</th><th>7m gehalten</th><th>Assists</th><th>Fehlpässe</th></tr></thead><tbody>`
+      +R.slice().reverse().map(r=>`<tr data-act="view" data-id="${r.g.id}" class="pr"><td>${esc(fD(gDate(r.g)))}</td><td class="nm">${esc(r.opp)}</td><td>${esc(r.erg)}</td><td>${v(r.k,'h')}</td><td>${v(r.k,'g')}</td><td class="calc">${q(v(r.k,'h'),v(r.k,'h')+v(r.k,'g'))}</td><td>${v(r.k,'h7')}/${v(r.k,'s7')}</td><td>${v(r.k,'as')}</td><td>${v(r.k,'fp')}</td></tr>`).join('')+'</tbody></table></div>';
+  }
+  h+='<p class="hint" style="display:block">Tipp auf ein Spiel öffnet dessen Auswertung. Die Säulen zeigen die Spiele in zeitlicher Reihenfolge (links das älteste).</p>';
+  B.innerHTML=h}
+// ---------- Bildschirm bleibt an (Browser-Version; in der Android-App erledigt das die App selbst) ----------
+let wakeL=null;
+async function keepAwake(){try{if(!isApp()&&'wakeLock' in navigator&&document.visibilityState==='visible'&&!wakeL){wakeL=await navigator.wakeLock.request('screen');wakeL.addEventListener('release',()=>{wakeL=null})}}catch(e){wakeL=null}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepAwake()});
 
 // ---------- PDF ----------
 // Vereinslogo (JPEG, 360x277) fürs PDF
@@ -2158,6 +2221,7 @@ function undo(){const u=(S.undo||[]).pop();if(!u)return;if(u.gid!==S.cur.id){S.u
 const app=document.getElementById('app');
 app.addEventListener('click',e=>{
   if(e.target.id==='ov'){if(sheet&&sheet.t==='role'&&!S.role)return;closeSheet();return}               // Tipp neben das Fenster schließt es
+  if(!wakeL)keepAwake();
   const t=e.target.closest('[data-t],[data-act]');if(!t||t.disabled)return;
   if(t.dataset.t){const k=t.dataset.t;if(k!=='ausw')S.view=null;S.tab=k;armed=null;sheet=null;save();render();window.scrollTo(0,0);return}
   const id=t.dataset.id,find=()=>S.archiv.find(x=>x.id===id);
@@ -2167,6 +2231,7 @@ app.addEventListener('click',e=>{
     case 'qa':doAct(t.dataset.p,'g',t.dataset.a,1);render();break;
     case 'close':closeSheet();break;
     case 'menu':openSheet({t:'m'});break;
+    case 'prof':openSheet({t:'prof',id});break;
     case 'updchk':sheet=null;drawSheet();toast('Suche nach Update …');checkRemote(true);break;
     case 'role':if(S.pin)openSheet({t:'pin'});else openSheet({t:'role'});break;
     case 'pinok':{const x=document.getElementById('pinin');if(x&&x.value===S.pin)openSheet({t:'role'});else{toast('PIN falsch');if(x){x.value='';x.focus()}}break}
@@ -2193,7 +2258,7 @@ app.addEventListener('click',e=>{
     case 'save':saveGame();break;
     case 'new':arm('new',()=>{S.cur=newGame(S.cur.fp,S.cur.gk);S.undo=[];S.last='';S.hf='all';sheet=null;S.tab='erf';save();render();toast('Neues Spiel begonnen')});drawSheet();break;
     case 'back':S.view=null;S.tab=S.role==='tr'?'hist':'erf';save();render();break;
-    case 'view':S.view=id;S.tab='ausw';S.hf='all';save();render();window.scrollTo(0,0);break;
+    case 'view':sheet=null;S.view=id;S.tab='ausw';S.hf='all';save();render();window.scrollTo(0,0);break;
     case 'hpdf':{const g=find();if(g)exportGame(g);break}
     case 'edit':{const go=()=>{const g=find();if(!g)return;S.cur=clone(g);S.cur.x=S.cur.x||{};S.cur.h2=S.cur.h2||{};S.cur.half=S.cur.half||1;
         {const c=S.cur,[o1,o2]=score(c,'all'),[a1,a2]=score(c,'1');            // ältere Spiele: Wert = erfasster Stand → war automatisch
@@ -2228,7 +2293,7 @@ app.addEventListener('change',e=>{const x=e.target,d=x.dataset,c=S.cur;
 });
 document.getElementById('imp').addEventListener('change',e=>{const L=[...(e.target.files||[])];e.target.value='';if(L.length){sheet=null;importFiles(L)}});
 if(S.cur&&S.cur.h&&(!S.cur.h.heim||S.cur.h.heim==='Winfried Huttrop')){S.cur.h.heim=TEAM;save()}   // früherer Standardname wird ersetzt
-render();if(!S.role)openSheet({t:'role'});
+render();keepAwake();if(!S.role)openSheet({t:'role'});
 if(updMode()&&!window.Capacitor){LS('sa_dw_broken','1');LS('sa_loader_src','nav');location.replace('app.html')}   // Sicherheitsnetz: App-Funktionen fehlen → eingebaute Version direkt öffnen
 else{LS('sa_boot_ok',LS('sa_boot_pending')||'');if(updMode())setTimeout(()=>checkRemote(false),2500)}
 // Offline-Speicher nur im Browser (GitHub Pages), nicht in der Android-App
