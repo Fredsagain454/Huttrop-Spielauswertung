@@ -103,6 +103,7 @@ h3{margin:14px 0 8px}
 .x{min-width:52px;font-size:20px}
 .ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .ab{display:flex}
+.agbr{grid-column:1/-1;height:2px}
 .ab .go{flex:1;min-width:0;min-height:64px;border-radius:10px 0 0 10px;font-size:17px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .ab .go span{min-width:0;overflow-wrap:break-word;hyphens:manual;-webkit-hyphens:manual}
 .ab .go b{flex:0 0 auto;background:rgba(0,0,0,.18);border-radius:999px;padding:2px 10px;min-width:36px;text-align:center}
@@ -1605,10 +1606,10 @@ const sgn=x=>x>0?'+'+x:String(x);
 const ACT={
  f:[{g:'Angriff',it:[
    ['tor','Tor','pos',[['a','t'],['a','w']]],
-   ['fw','Fehlwurf','neu',[['a','w']],o=>v(o.a,'w')-v(o.a,'t')-v(o.a,'gv')],
+   ['fw','Fehlwurf','neg',[['a','w']],o=>v(o.a,'w')-v(o.a,'t')-v(o.a,'gv')],
    ['t7','7m-Tor','pos',[['a','t7'],['a','w7']]],
-   ['f7','7m verworfen','neu',[['a','w7']],o=>v(o.a,'w7')-v(o.a,'t7')],
-   ['gv','Gegen\u00adstoß verworfen','neu',[['a','gv'],['a','w']]],
+   ['f7','7m verworfen','neg',[['a','w7']],o=>v(o.a,'w7')-v(o.a,'t7')],
+   ['gv','Gegen\u00adstoß verworfen','neg',[['a','gv'],['a','w']]],
    ['as','Assist','pos',[['a','as']]],
    ['h7','7m heraus\u00adgeholt','pos',[['a','h7']]],
    ['e1','1:1 gewonnen','pos',[['a','e1']]],
@@ -1840,8 +1841,9 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
   if(sheet.t==='role')return sheetRole(B);if(sheet.t==='pin')return sheetPin(B);if(sheet.t==='sent')return sheetSent(B);
   if(sheet.t==='p'){const g=S.cur,pid=sheet.pid,kind=sheet.kind,o=pdata(g,pid),nr=pnr(g,pid);
     B.innerHTML=`<div class="sh"><h2>${nr?`<span>${esc(nr)}</span> `:''}${esc(pn(g,pid))}</h2><span class="lbl">Erfasst in ${g.half||1}. Halbzeit</span><button data-act="close" class="x">✕</button></div>`
-      +ACT[kind].map(gr=>`<h3>${gr.g}</h3><div class="ag">`+gr.it.map(a=>{const n=cnt(a,o);
-        return `<div class="ab"><button class="go ${a[2]}" data-act="pa" data-a="${a[0]}" data-v="1"><span>${a[1]}</span><b>${n}</b></button><button class="dn" data-act="pa" data-a="${a[0]}" data-v="-1" ${n?'':'disabled'} title="1 abziehen">−</button></div>`}).join('')+'</div>').join('')
+      +ACT[kind].map(gr=>{const P=gr.it.filter(a=>a[2]==='pos'),N=gr.it.filter(a=>a[2]!=='pos');
+        return `<h3>${gr.g}</h3><div class="ag">`+[...P,...(P.length&&N.length?['br']:[]),...N].map(a=>{if(a==='br')return '<div class="agbr"></div>';const n=cnt(a,o);
+        return `<div class="ab"><button class="go ${a[2]}" data-act="pa" data-a="${a[0]}" data-v="1"><span>${a[1]}</span><b>${n}</b></button><button class="dn" data-act="pa" data-a="${a[0]}" data-v="-1" ${n?'':'disabled'} title="1 abziehen">−</button></div>`}).join('')+'</div>'}).join('')
       +'<p class="hint">Antippen zählt +1 und schließt das Fenster. „−“ zieht 1 ab, falls du dich vertippt hast.</p>';return}
   if(sheet.t==='h'){const g=S.cur,[o1,o2]=score(g,'all'),[a1,a2]=score(g,'1'),F=(k,l,ty,ph)=>`<label>${l}<input data-h="${k}" ${ty?`type="${ty}"`:''} value="${esc(g.h[k]||'')}" placeholder="${ph||''}"></label>`;
     B.innerHTML=`<div class="sh"><h2>Spieldaten</h2><button data-act="close" class="x">✕</button></div><div class="hd">`
