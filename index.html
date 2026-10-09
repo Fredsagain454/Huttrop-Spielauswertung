@@ -220,7 +220,8 @@ g:{t:'Torhüter',cols:[
 const LK=s=>s==='g'?'gk':'fp';
 
 // ---------- Zustand ----------
-const newGame=(fp,gk)=>({id:uid(),h:{},notes:'',fp:[...(fp||[])],gk:[...(gk||[])],a:{},d:{},g:{},x:{},h2:{},half:1});
+const TEAM='Winfried Huttrop';                  // eigene Mannschaft – wird bei jedem neuen Spiel als Heim eingetragen
+const newGame=(fp,gk)=>({id:uid(),h:{heim:TEAM},notes:'',fp:[...(fp||[])],gk:[...(gk||[])],a:{},d:{},g:{},x:{},h2:{},half:1});
 const fresh=()=>({kader:[],cur:newGame(),archiv:[],tab:'kader',view:null,season:'alle',hf:'all',undo:[],autoB:null});
 let S=fresh();
 (function load(){
@@ -246,7 +247,7 @@ const nrSort=(a,b)=>{const x=parseInt(a.nr),y=parseInt(b.nr);
   if(isNaN(x)!==isNaN(y))return isNaN(x)?1:-1;if(!isNaN(x)&&x!==y)return x-y;return String(a.name).localeCompare(String(b.name),'de')};
 const lineup=(g,key)=>g[key].map(id=>({id,name:pn(g,id),nr:pnr(g,id)})).sort(nrSort);
 const hasData=g=>['a','d','g','x'].some(s=>Object.values(g[s]||{}).some(o=>Object.values(o||{}).some(n=>n>0)))
-  ||Object.values(g.h||{}).some(x=>x)||!!g.notes;
+  ||Object.entries(g.h||{}).some(([k,x])=>x&&!(k==='heim'&&x===TEAM))||!!g.notes;
 // Halbzeiten: g[sec] = gesamt, g.h2[sec] = Anteil 2. Halbzeit, 1. HZ = gesamt − 2. HZ
 const pobj=(g,sec,pid,hf)=>{const t=((g[sec]||{})[pid])||{};if(!hf||hf==='all')return t;
   const two=(((g.h2||{})[sec]||{})[pid])||{},o={};for(const k in t)o[k]=hf==='2'?(two[k]||0):Math.max(0,(t[k]||0)-(two[k]||0));return o};
@@ -1761,12 +1762,12 @@ function bar(){
 }
 function scoreLine(g,ctrl){
   const [o1,o2]=score(g,'all'),[a1,a2]=score(g,'1');
-  let h=`<div class="score"><span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gast')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
+  let h=`<div class="score"><span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gegner')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
   if(ctrl){
     h+=segB('half',g.half||1,[[1,'1. HZ'],[2,'2. HZ']])
       +`<button data-act="undo" ${(S.undo||[]).length?'':'disabled'}>↶<span class="dsk"> Rückgängig</span></button>`
       +`<div class="gkq"><span class="last">${S.last?esc(S.last):'Noch keine Aktion erfasst'}</span><span class="sp"></span>`
-      +`<button data-act="hdlg" class="${g.h.heim||g.h.gast?'':'warn'}">${g.h.heim||g.h.gast?'Spieldaten':'Spieldaten eintragen'}</button></div>`;
+      +`<button data-act="hdlg" class="${g.h.gast?'':'warn'}">${g.h.gast?'Spieldaten':'Gegner eintragen'}</button></div>`;
   }
   return h+'</div>';
 }
@@ -2203,6 +2204,7 @@ app.addEventListener('change',e=>{const x=e.target,d=x.dataset,c=S.cur;
   if(d.kn||d.kr)render();
 });
 document.getElementById('imp').addEventListener('change',e=>{const L=[...(e.target.files||[])];e.target.value='';if(L.length){sheet=null;importFiles(L)}});
+if(S.cur&&S.cur.h&&!S.cur.h.heim){S.cur.h.heim=TEAM;save()}
 render();if(!S.role)openSheet({t:'role'});
 // Offline-Speicher nur im Browser (GitHub Pages), nicht in der Android-App
 if(!isApp()&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
