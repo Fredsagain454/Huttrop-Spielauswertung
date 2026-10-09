@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
-<meta name="sa-version" content="2.3.0">
+<meta name="sa-version" content="2.3.1">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -276,9 +276,9 @@ const gDate=g=>g.h&&g.h.datum?g.h.datum:new Date(g.savedAt||Date.now()).toISOStr
 const fD=iso=>iso?iso.split('-').reverse().join('.'):'';
 const gTitle=g=>`${g.h.heim||'?'} – ${g.h.gast||'?'}`;
 const seasonOf=g=>g.h&&/^\d\d\/\d\d$/.test(g.h.saison||'')?g.h.saison:seasonFor(gDate(g));
-// Auswahlliste: 3 Saisons zurück bis 2 voraus, plus alle schon verwendeten
-function seasonOpts(cur){const a=+seasonFor(todayStr()).slice(0,2),L=new Set([...S.archiv.map(seasonOf),cur].filter(Boolean));
-  for(let y=a-3;y<=a+2;y++)L.add(String(y).padStart(2,'0')+'/'+String(y+1).padStart(2,'0'));return [...L].sort().reverse()}
+// Auswahlliste: ab 26/27 bis 2 Saisons voraus (die Saison des Spiels selbst bleibt immer wählbar)
+function seasonOpts(cur){const a=+seasonFor(todayStr()).slice(0,2),L=new Set([cur].filter(Boolean));
+  for(let y=26;y<=Math.max(26,a)+2;y++)L.add(String(y).padStart(2,'0')+'/'+String(y+1).padStart(2,'0'));return [...L].sort().reverse()}
 
 let armed=null,timer=0;
 function arm(key,fn){if(armed===key){clearTimeout(timer);armed=null;fn();return}
