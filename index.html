@@ -220,7 +220,7 @@ g:{t:'Torhüter',cols:[
 const LK=s=>s==='g'?'gk':'fp';
 
 // ---------- Zustand ----------
-const TEAM='Winfried Huttrop';                  // eigene Mannschaft – wird bei jedem neuen Spiel als Heim eingetragen
+const TEAM='Winfried Huttrop II';                  // eigene Mannschaft – wird bei jedem neuen Spiel als Heim eingetragen
 const newGame=(fp,gk)=>({id:uid(),h:{heim:TEAM},notes:'',fp:[...(fp||[])],gk:[...(gk||[])],a:{},d:{},g:{},x:{},h2:{},half:1});
 const fresh=()=>({kader:[],cur:newGame(),archiv:[],tab:'kader',view:null,season:'alle',hf:'all',undo:[],autoB:null});
 let S=fresh();
@@ -2204,7 +2204,7 @@ app.addEventListener('change',e=>{const x=e.target,d=x.dataset,c=S.cur;
   if(d.kn||d.kr)render();
 });
 document.getElementById('imp').addEventListener('change',e=>{const L=[...(e.target.files||[])];e.target.value='';if(L.length){sheet=null;importFiles(L)}});
-if(S.cur&&S.cur.h&&!S.cur.h.heim){S.cur.h.heim=TEAM;save()}
+if(S.cur&&S.cur.h&&(!S.cur.h.heim||S.cur.h.heim==='Winfried Huttrop')){S.cur.h.heim=TEAM;save()}   // früherer Standardname wird ersetzt
 render();if(!S.role)openSheet({t:'role'});
 // Offline-Speicher nur im Browser (GitHub Pages), nicht in der Android-App
 if(!isApp()&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
