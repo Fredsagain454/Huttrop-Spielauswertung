@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
-<meta name="sa-version" content="2.3.1">
+<meta name="sa-version" content="2.4.0">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -193,6 +193,27 @@ details.pc[open] .pv::after{content:' ▾'}
 .pd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:0 12px 10px;font-size:13px}
 .pd div{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:3px 0}
 .pd div b{margin-left:8px}
+:root{--h2c:#c2410c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--h2c:#fb923c}}
+:root[data-theme="dark"]{--h2c:#fb923c}
+.score.hz1{border-left:6px solid var(--acc)}
+.score.hz2{border-left:6px solid var(--h2c)}
+.score.hz2 .seg button.on{background:var(--h2c);border-color:var(--h2c);color:#fff}
+.score .hzt{font-weight:bold;font-size:13px;padding:3px 8px;border-radius:999px;color:#fff;background:var(--acc);white-space:nowrap}
+.score.hz2 .hzt{background:var(--h2c)}
+.hzask{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:2px solid var(--h2c);border-radius:8px;padding:8px 10px}
+.hzask b{flex:1 1 220px}
+.hzask button.go{background:var(--h2c);border-color:var(--h2c);color:#fff;font-weight:bold}
+.hzl{list-style:none;margin:0 0 10px;padding:0;max-height:58vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.hzl li{display:flex;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}
+.hzl li.h1{box-shadow:inset 5px 0 var(--acc)}.hzl li.h2{box-shadow:inset 5px 0 var(--h2c)}
+.hzl .tm{font-variant-numeric:tabular-nums;opacity:.7;min-width:42px}
+.hzl .s2{font-weight:bold;min-width:46px;font-variant-numeric:tabular-nums}
+.hzl .lb{flex:1;min-width:0}
+.hzl li.gap{justify-content:center;font-size:12px;opacity:.85;padding:3px 10px}
+.hzl li.gap.sug{opacity:1;font-weight:bold;color:var(--h2c)}
+.hzl li.cut{justify-content:center;font-weight:bold;color:#fff;background:var(--h2c);padding:4px 10px}
+.hzl button{padding:6px 10px;font-size:13px}
 </style></head><body>
 <div id="app">
 <div class="bar" id="bar"></div>
@@ -1678,7 +1699,8 @@ function doAct(pid,kind,id,d){
       if(g.tl.length===30&&tlOk(g))setTimeout(()=>toast('🍺 Das 30. Tor: '+pn(g,pid)+(pnr(g,pid)?' (#'+pnr(g,pid)+')':'')),400)}
     else for(let i=g.tl.length-1;i>=0;i--)if(g.tl[i].p===pid&&g.tl[i].k===id){ch.push({tl:'del',i,e:g.tl.splice(i,1)[0]});break}}
   const lbl=`${d>0?'+1':'−1'} ${a[1]} – ${pn(S.cur,pid)} (${S.cur.half||1}. HZ)`;
-  pushUndo(ch,lbl);S.last=lbl;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}save();
+  const le=logAct(S.cur,{t:Date.now(),h:S.cur.half||1,k:kind,a:id,p:pid,d,c:ch.filter(c=>c.sec).map(c=>[c.sec,c.k,c.dt])});
+  pushUndo(ch,lbl);S.undo[S.undo.length-1].lid=le.i;S.last=lbl;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}save();
 }
 
 // ---------- Spielbericht (regelbasiert, ohne Internet) ----------
@@ -1781,12 +1803,12 @@ function bar(){
 }
 function scoreLine(g,ctrl){
   const [o1,o2]=score(g,'all'),[a1,a2]=score(g,'1');
-  let h=`<div class="score"><span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gegner')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
+  let h=`<div class="score${ctrl?' hz'+(g.half||1):''}">${ctrl?`<span class="hzt">${g.half||1}. Halbzeit</span>`:''}<span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gegner')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
   if(ctrl){
     h+=segB('half',g.half||1,[[1,'1. HZ'],[2,'2. HZ']])
       +`<button data-act="undo" ${(S.undo||[]).length?'':'disabled'}>↶<span class="dsk"> Rückgängig</span></button>`
       +`<div class="gkq"><span class="last">${S.last?esc(S.last):'Noch keine Aktion erfasst'}</span><span class="sp"></span>`
-      +`<button data-act="hdlg" class="${g.h.gast?'':'warn'}">${g.h.gast?'Spieldaten':'Gegner eintragen'}</button></div>`;
+      +`<button data-act="hdlg" class="${g.h.gast?'':'warn'}">${g.h.gast?'Spieldaten':'Gegner eintragen'}</button></div>`+hzAskHtml();
   }
   return h+'</div>';
 }
@@ -1859,6 +1881,7 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
   if(sheet.t==='qrr'&&B.dataset.k==='qrr')return;          // laufende Kamera nicht neu aufbauen
   B.dataset.k=sheet.t;if(sheet.t.startsWith('qr')){stopScan();return sheetQR(B)}
   if(sheet.t==='prof')return sheetProf(B);
+  if(sheet.t==='hzfix')return sheetHz(B);
   if(sheet.t==='role')return sheetRole(B);if(sheet.t==='pin')return sheetPin(B);if(sheet.t==='sent')return sheetSent(B);
   if(sheet.t==='p'){const g=S.cur,pid=sheet.pid,kind=sheet.kind,o=pdata(g,pid),nr=pnr(g,pid);
     B.innerHTML=`<div class="sh"><h2>${nr?`<span>${esc(nr)}</span> `:''}${esc(pn(g,pid))}</h2><span class="lbl">Erfasst in ${g.half||1}. Halbzeit</span><button data-act="close" class="x">✕</button></div>`
@@ -1870,7 +1893,7 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
     B.innerHTML=`<div class="sh"><h2>Spieldaten</h2><button data-act="close" class="x">✕</button></div><div class="hd">`
       +F('heim','Heim')+F('gast','Gast')+(()=>{const cs=seasonOf(g);return `<label>Saison<select data-h="saison">${seasonOpts(cs).map(x=>`<option ${x===cs?'selected':''}>${x}</option>`).join('')}</select></label>`})()+F('datum','Datum','date')+F('zeit','Uhrzeit','time')+F('ort','Ort')
       +F('erg','Ergebnis','',`${o1}:${o2} (automatisch)`)+F('hz','Halbzeit','',hasH2(g)?`${a1}:${a2} (automatisch)`:'automatisch')
-      +`</div><p class="hint">Ergebnis und Halbzeit füllen sich beim Speichern automatisch aus dem erfassten Spielstand, wenn du nichts einträgst.</p><div class="bar"><span class="sp"></span><button data-act="close" class="on">Fertig</button></div>`;return}
+      +`</div><p class="hint">Ergebnis und Halbzeit füllen sich beim Speichern automatisch aus dem erfassten Spielstand, wenn du nichts einträgst.</p><div class="bar">${(g.log||[]).length?'<button data-act="hzfix">Halbzeit nachträglich festlegen</button>':''}<span class="sp"></span><button data-act="close" class="on">Fertig</button></div>`;return}
   if(sheet.t==='m'){const M=(act,l,x)=>`<button data-act="${act}" ${x||''}>${l}</button>`;
     B.innerHTML=`<div class="sh"><h2>Menü</h2><button data-act="close" class="x">✕</button></div><div class="mn">`
       +(S.role!=='tr'?M('goto','Historie','data-v="hist"'):'')+(can('saison')&&S.role!=='tr'?M('goto','Saison','data-v="saison"'):'')
@@ -2219,9 +2242,55 @@ function importBackup(txt){let d;try{d=JSON.parse(txt)}catch(e){alert('Die Datei
 function bump(g,sec,pid,k,d,ch){g[sec]=g[sec]||{};const o=g[sec][pid]||(g[sec][pid]={});const b=v(o,k),a=Math.max(0,b+d),dt=a-b;if(!dt)return;o[k]=a;
   g.h2=g.h2||{};const T=g.h2[sec]||(g.h2[sec]={}),q=T[pid]||(T[pid]={}),b2=v(q,k);let a2=b2;
   if((g.half||1)===2)a2=Math.max(0,b2+dt);if(a2>a)a2=a;const dh=a2-b2;if(dh)q[k]=a2;ch.push({sec,pid,k,dt,dh})}
+// ---------- Aktionsprotokoll & Halbzeit ----------
+// g.log: jede Aktion mit Uhrzeit {i,t,h,k,a,p,d,c:[[sec,key,delta]]} – Grundlage für Pausen-Erkennung und nachträgliche Halbzeit
+function logAct(g,e){g.log=g.log||[];e.i=uid();g.log.push(e);return e}
+const PAUSE=5*60e3;
+function logOk(g){const L=g.log;if(!Array.isArray(L)||!L.length)return false;const T={};
+  L.forEach(e=>(e.c||[]).forEach(([s,k,dt])=>{const key=s+'|'+e.p+'|'+k;T[key]=(T[key]||0)+dt}));
+  for(const s of ['a','d','g','x'])for(const p in (g[s]||{}))for(const k in (g[s][p]||{}))if((g[s][p][k]||0)!==(T[s+'|'+p+'|'+k]||0))return false;
+  return Object.keys(T).every(key=>{const [s,p,k]=key.split('|');return T[key]===v(((g[s]||{})[p])||{},k)})}
+// Ab Eintrag i zählt alles zur 2. Halbzeit (i = Anzahl Einträge → alles 1. Halbzeit)
+function splitAt(g,i){const L=g.log;g.h2={};
+  L.forEach((e,j)=>{e.h=j>=i?2:1;if(j<i)return;(e.c||[]).forEach(([s,k,dt])=>{const T=g.h2[s]||(g.h2[s]={}),q=T[e.p]||(T[e.p]={});q[k]=Math.max(0,(q[k]||0)+dt)})});
+  for(const s in g.h2)for(const p in g.h2[s])for(const k in g.h2[s][p]){const tot=v(((g[s]||{})[p])||{},k);if(g.h2[s][p][k]>tot)g.h2[s][p][k]=tot}
+  if(Array.isArray(g.tl)){let n1=0;L.slice(0,i).forEach(e=>(e.c||[]).forEach(([s,k,dt])=>{if(s==='a'&&(k==='t'||k==='t7'))n1+=dt}));g.tl.forEach((t,j)=>t.h=j<n1?1:2)}
+  if(g.hzAuto){delete g.h.hz;delete g.hzAuto}
+  if(i<L.length)g.half=2;
+  (S.undo||[]).forEach(u=>{if(u.gid!==g.id||!u.lid)return;const e=L.find(x=>x.i===u.lid);if(e)u.ch.forEach(c=>{if(c.sec)c.dh=e.h===2?c.dt:0})})}
+const hhmm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const logLbl=(g,e)=>{const a=findAct(e.k,e.a);return `${e.d>0?'+1':'−1'} ${a?a[1].replace(/­/g,''):e.a} – ${pn(g,e.p)}`};
+// Hinweis „Halbzeitpause?“ beim Erfassen (nur 1. HZ, ab 10 Aktionen)
+function hzAsk(){const g=S.cur,L=g.log||[];if(!can('erfassen')||S.tab!=='erf'||S.view||(g.half||1)!==1||L.length<10)return null;
+  const last=L[L.length-1],gap=Date.now()-last.t;
+  if(gap>=PAUSE)return S.hzNo===last.t?null:{k:'idle',min:Math.floor(gap/60e3)};
+  for(let j=L.length-1;j>=Math.max(10,L.length-5);j--){const d=L[j].t-L[j-1].t;if(d>=PAUSE)return S.hzNo===L[j-1].t?null:{k:'after',j,min:Math.round(d/60e3),no:L[j-1].t}}
+  return null}
+function hzAskHtml(){const q=hzAsk();if(!q)return '';
+  if(q.k==='idle')return `<div class="hzask"><b>Seit ${q.min} Min keine Eingabe – ist Halbzeitpause?</b><button data-act="half" data-v="2" class="go">Auf 2. Halbzeit umstellen</button><button data-act="hzno" data-v="${S.cur.log[S.cur.log.length-1].t}">Nein</button></div>`;
+  const ok=logOk(S.cur);
+  return `<div class="hzask"><b>Nach ${q.min} Min Pause geht es weiter – gehört das schon zur 2. Halbzeit?</b>${ok?`<button data-act="hzset" data-v="${q.j}" class="go">Ja, ab da 2. Halbzeit</button>`:`<button data-act="half" data-v="2" class="go">Ja, jetzt 2. Halbzeit</button>`}<button data-act="hzno" data-v="${q.no}">Nein</button></div>`}
+let hzAskKey='';setInterval(()=>{if(sheet||S.tab!=='erf')return;const k=JSON.stringify(hzAsk());if(k!==hzAskKey){hzAskKey=k;draw()}},20000);
+function sheetHz(B){const g=S.cur,L=g.log||[];
+  let h=`<div class="sh"><h2>Halbzeit nachträglich festlegen</h2><button data-act="close" class="x">✕</button></div>`;
+  if(!logOk(g)){B.innerHTML=h+`<p class="hint" style="display:block">Für dieses Spiel gibt es kein vollständiges Aktionsprotokoll (das Protokoll gibt es erst seit Version 2.4.0). Den Halbzeitstand kannst du aber unter <b>Spieldaten → Halbzeit</b> von Hand eintragen.</p><div class="bar"><span class="sp"></span><button data-act="hdlg" class="on">Zu den Spieldaten</button></div>`;return}
+  const cut=(()=>{const c=L.findIndex(e=>e.h===2);return c<0?L.length:c})();
+  let best=-1,bg=0;for(let j=1;j<L.length;j++){const d=L[j].t-L[j-1].t;if(d>bg){bg=d;best=j}}
+  let o=0,p=0,li='';
+  L.forEach((e,j)=>{
+    if(j>0){const d=L[j].t-L[j-1].t;if(d>=3*60e3)li+=`<li class="gap${j===best&&d>=PAUSE?' sug':''}">${Math.round(d/60e3)} Min Pause${j===best&&d>=PAUSE?' – vermutlich die Halbzeit':''}</li>`}
+    if(j===cut)li+=`<li class="cut" id="hzcut">2. Halbzeit beginnt hier</li>`;
+    (e.c||[]).forEach(([s,k,dt])=>{if(s==='a'&&(k==='t'||k==='t7'))o+=dt;if(s==='g'){if(k==='g'||k==='s7')p+=dt;if(k==='h7')p-=dt}});
+    li+=`<li class="h${j>=cut?2:1}"><span class="tm">${hhmm(e.t)}</span><span class="s2">${o}:${p}</span><span class="lb">${esc(logLbl(g,e))}</span>${j===cut?'':`<button data-act="hzset" data-v="${j}">Ab hier 2. HZ</button>`}</li>`});
+  if(cut===L.length)li+=`<li class="cut" id="hzcut">Bisher alles 1. Halbzeit</li>`;
+  const [a1,a2]=score(g,'1'),[b1,b2]=score(g,'2');
+  B.innerHTML=h+`<p>Tippe bei der <b>ersten Aktion der 2. Halbzeit</b> auf „Ab hier 2. HZ“. Alle Zahlen werden für beide Halbzeiten neu aufgeteilt.</p>
+    <p><b>Aktuell:</b> 1. HZ ${a1}:${a2}${cut<L.length?` · 2. HZ ${b1}:${b2}`:''}</p><ul class="hzl">${li}</ul>
+    <div class="bar">${cut<L.length?`<button data-act="hzset" data-v="${L.length}">Alles 1. Halbzeit</button>`:''}<span class="sp"></span><button data-act="close" class="on">Fertig</button></div>`;
+  setTimeout(()=>{const c=document.getElementById('hzcut');c&&c.scrollIntoView({block:'center'})},0)}
 function pushUndo(ch,label){S.undo=S.undo||[];S.undo.push({gid:S.cur.id,ch,label});if(S.undo.length>200)S.undo.shift()}
 function undo(){const u=(S.undo||[]).pop();if(!u)return;if(u.gid!==S.cur.id){S.undo=[];render();return}
-  const g=S.cur;u.ch.slice().reverse().forEach(c=>{
+  const g=S.cur;if(u.lid&&Array.isArray(g.log))g.log=g.log.filter(e=>e.i!==u.lid);u.ch.slice().reverse().forEach(c=>{
     if(c.tl){g.tl=g.tl||[];if(c.tl==='add')g.tl.pop();else g.tl.splice(c.i,0,c.e);return}
     const o=g[c.sec][c.pid];o[c.k]=Math.max(0,v(o,c.k)-c.dt);
     if(c.dh){const q=g.h2[c.sec][c.pid];q[c.k]=Math.max(0,v(q,c.k)-c.dh)}});
@@ -2260,6 +2329,10 @@ app.addEventListener('click',e=>{
     case 'sub':S.sub=t.dataset.v;save();render();break;
     case 'pdf':exportGame(S.cur);break;
     case 'undo':undo();break;
+    case 'hzfix':openSheet({t:'hzfix'});break;
+    case 'hzno':S.hzNo=+t.dataset.v;save();render();break;
+    case 'hzset':{const i=+t.dataset.v;if(!logOk(S.cur)){toast('Für dieses Spiel nicht möglich');break}splitAt(S.cur,i);save();render();
+      const [a1,a2]=score(S.cur,'1');toast(i<S.cur.log.length?`Halbzeit festgelegt – 1. HZ ${a1}:${a2}`:'Alles zählt zur 1. Halbzeit');break}
     case 'half':S.cur.half=+t.dataset.v;save();render();toast(`Erfassung jetzt: ${t.dataset.v}. Halbzeit`);break;
     case 'hf':S.hf=t.dataset.v;save();render();break;
     case 'og':case 'ogm':{if(sheet&&sheet.t==='m')sheet=null;const ch=[],d=t.dataset.act==='og'?1:-1;bump(S.cur,'x','og','n',d,ch);
