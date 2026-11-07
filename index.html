@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spielauswertung">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Spielauswertung</title>
-<meta name="sa-version" content="2.4.0">
+<meta name="sa-version" content="2.5.0">
 <style>
 :root{--bg:#f6f7f9;--fg:#15181d;--card:#fff;--line:#c9cfd8;--calc:#cfe3fb;--pos:#1b7f3b;--neg:#b3261e;--acc:#1d4ed8;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -214,6 +214,8 @@ details.pc[open] .pv::after{content:' ▾'}
 .hzl li.gap.sug{opacity:1;font-weight:bold;color:var(--h2c)}
 .hzl li.cut{justify-content:center;font-weight:bold;color:#fff;background:var(--h2c);padding:4px 10px}
 .hzl button{padding:6px 10px;font-size:13px}
+.smode{font-size:13px;margin:0 0 6px;padding:6px 10px;border-radius:6px;background:var(--calc)}
+.score .smb{font-weight:bold}
 </style></head><body>
 <div id="app">
 <div class="bar" id="bar"></div>
@@ -1688,6 +1690,9 @@ function specials(g){const L=[],F=g.fp,D=k=>F.map(id=>({id,n:v(pobj(g,'d',id,'al
   const gv=F.map(id=>({id,n:v(pobj(g,'a',id,'all'),'gv')})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
   if(gv.length){const n=gv.reduce((s,x)=>s+x.n,0);L.push({t:'gv',l:'Gegenstoß verworfen',v:`${n}× – `+gv.map(x=>whoS(g,x.id)+(x.n>1?' ('+x.n+')':'')).join(', ')})}
   return L}
+// Einfache Eingabe: nur die wichtigsten Aktionen (per Knopf ein-/ausschaltbar)
+const SIMPLE={f:['tor','t7','f7','pf'],g:['h','g']};
+const actGroups=kind=>S.simple?ACT[kind].map(gr=>({...gr,it:gr.it.filter(a=>SIMPLE[kind].includes(a[0]))})).filter(gr=>gr.it.length):ACT[kind];
 const findAct=(kind,id)=>ACT[kind].flatMap(x=>x.it).find(a=>a[0]===id);
 const pdata=(g,pid)=>({a:(g.a||{})[pid]||{},d:(g.d||{})[pid]||{},g:(g.g||{})[pid]||{}});
 const cnt=(a,o)=>a[4]?a[4](o):v(o[a[3][0][0]],a[3][0][1]);
@@ -1806,6 +1811,7 @@ function scoreLine(g,ctrl){
   let h=`<div class="score${ctrl?' hz'+(g.half||1):''}">${ctrl?`<span class="hzt">${g.half||1}. Halbzeit</span>`:''}<span class="sc">${esc(g.h.heim||'Heim')}<b>${o1} : ${o2}</b>${esc(g.h.gast||'Gegner')}</span>`+(hasH2(g)?`<small>1. HZ ${a1}:${a2}</small>`:'')+'<span class="sp"></span>';
   if(ctrl){
     h+=segB('half',g.half||1,[[1,'1. HZ'],[2,'2. HZ']])
+      +`<button data-act="simple" class="smb${S.simple?' on':''}" aria-pressed="${S.simple?'true':'false'}" title="Einfache Eingabe ein/aus">${S.simple?'✓ ':''}Einfach</button>`
       +`<button data-act="undo" ${(S.undo||[]).length?'':'disabled'}>↶<span class="dsk"> Rückgängig</span></button>`
       +`<div class="gkq"><span class="last">${S.last?esc(S.last):'Noch keine Aktion erfasst'}</span><span class="sp"></span>`
       +`<button data-act="hdlg" class="${g.h.gast?'':'warn'}">${g.h.gast?'Spieldaten':'Gegner eintragen'}</button></div>`+hzAskHtml();
@@ -1885,7 +1891,8 @@ function drawSheet(){const O=document.getElementById('ov'),B=document.getElement
   if(sheet.t==='role')return sheetRole(B);if(sheet.t==='pin')return sheetPin(B);if(sheet.t==='sent')return sheetSent(B);
   if(sheet.t==='p'){const g=S.cur,pid=sheet.pid,kind=sheet.kind,o=pdata(g,pid),nr=pnr(g,pid);
     B.innerHTML=`<div class="sh"><h2>${nr?`<span>${esc(nr)}</span> `:''}${esc(pn(g,pid))}</h2><span class="lbl">Erfasst in ${g.half||1}. Halbzeit</span><button data-act="close" class="x">✕</button></div>`
-      +ACT[kind].map(gr=>{const P=gr.it.filter(a=>a[2]==='pos'),N=gr.it.filter(a=>a[2]!=='pos');
+      +(S.simple?'<p class="smode">Einfache Eingabe – weitere Aktionen über den Knopf „Einfach“ in der Spielstand-Leiste</p>':'')
+      +actGroups(kind).map(gr=>{const P=gr.it.filter(a=>a[2]==='pos'),N=gr.it.filter(a=>a[2]!=='pos');
         return `<h3>${gr.g}</h3><div class="ag">`+[...P,...(P.length&&N.length?['br']:[]),...N].map(a=>{if(a==='br')return '<div class="agbr"></div>';const n=cnt(a,o);
         return `<div class="ab"><button class="go ${a[2]}" data-act="pa" data-a="${a[0]}" data-v="1"><span>${a[1]}</span><b>${n}</b></button><button class="dn" data-act="pa" data-a="${a[0]}" data-v="-1" ${n?'':'disabled'} title="1 abziehen">−</button></div>`}).join('')+'</div>'}).join('')
       +'<p class="hint">Antippen zählt +1 und schließt das Fenster. „−“ zieht 1 ab, falls du dich vertippt hast.</p>';return}
@@ -2329,6 +2336,7 @@ app.addEventListener('click',e=>{
     case 'sub':S.sub=t.dataset.v;save();render();break;
     case 'pdf':exportGame(S.cur);break;
     case 'undo':undo();break;
+    case 'simple':S.simple=!S.simple;save();render();toast(S.simple?'Einfache Eingabe: nur Tore, 7m, Fehlpässe · Torhüter: Gehalten/Gegentor':'Alle Aktionen wieder sichtbar');break;
     case 'hzfix':openSheet({t:'hzfix'});break;
     case 'hzno':S.hzNo=+t.dataset.v;save();render();break;
     case 'hzset':{const i=+t.dataset.v;if(!logOk(S.cur)){toast('Für dieses Spiel nicht möglich');break}splitAt(S.cur,i);save();render();
